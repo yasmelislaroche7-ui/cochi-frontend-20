@@ -1,0 +1,300 @@
+"use client"
+
+import { useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { StakeStats } from "@/components/stake-stats"
+import { StakeForm } from "@/components/stake-form"
+import { UnstakeForm } from "@/components/unstake-form"
+import { MatrixRain } from "@/components/matrix-rain"
+import { WorldIdVerify } from "@/components/world-id-verify"
+import { TransactionHistory } from "@/components/transaction-history"
+import { ContractInfo } from "@/components/contract-info"
+import { Coins, TrendingUp, Clock, Wallet, AlertTriangle } from "lucide-react"
+import { useStaking } from "@/hooks/use-staking"
+import { formatUnits, parseUnits } from "viem"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
+export default function StakingApp() {
+  const [activeTab, setActiveTab] = useState<"stake" | "unstake">("stake")
+  const {
+    stakedBalance,
+    availableBalance,
+    pendingRewards,
+    unlockTime,
+    apr,
+    isUnlocked,
+    isConnected,
+    address,
+    loading,
+    connectWallet,
+    stake,
+    unstake,
+    claim,
+  } = useStaking()
+
+  const apyNumber = Number(apr) / 100
+  const stakedBalanceFormatted = Number(formatUnits(stakedBalance, 18))
+  const availableBalanceFormatted = Number(formatUnits(availableBalance, 18))
+  const pendingRewardsFormatted = Number(formatUnits(pendingRewards, 18))
+  const estimatedDailyRewards = (stakedBalanceFormatted * apyNumber) / 100 / 365
+
+  const unlockDate = unlockTime > 0n ? new Date(Number(unlockTime) * 1000) : null
+  const isLocked = unlockDate && unlockDate > new Date()
+
+  const handleConnect = async () => {
+    try {
+      await connectWallet()
+    } catch (error) {
+      console.error("Failed to connect wallet:", error)
+    }
+  }
+
+  const handleStake = async (amount: number) => {
+    try {
+      const amountWei = parseUnits(amount.toString(), 18)
+      await stake(amountWei)
+    } catch (error) {
+      console.error("Stake failed:", error)
+      throw error
+    }
+  }
+
+  const handleUnstake = async (amount: number) => {
+    try {
+      const amountWei = parseUnits(amount.toString(), 18)
+      await unstake(amountWei)
+    } catch (error) {
+      console.error("Unstake failed:", error)
+      throw error
+    }
+  }
+
+  const handleClaim = async () => {
+    try {
+      await claim()
+    } catch (error) {
+      console.error("Claim failed:", error)
+      throw error
+    }
+  }
+
+  return (
+    <>
+      <MatrixRain />
+
+      <div className="min-h-screen relative z-10 p-4 md:p-8">
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="text-center space-y-2 py-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-matrix-green/20 rounded-lg flex items-center justify-center border border-matrix-green/50 shadow-[0_0_15px_rgba(0,255,0,0.3)]">
+                <Coins className="w-7 h-7 text-matrix-green" />
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold text-matrix-green font-mono tracking-wider drop-shadow-[0_0_10px_rgba(0,255,0,0.5)]">
+                MATRIX STAKE
+              </h1>
+            </div>
+            <p className="text-matrix-green/70 text-balance max-w-md mx-auto font-mono text-sm">
+              {">"} Stake your tokens and earn rewards with 1-day unlock period_
+            </p>
+
+            {!isConnected && (
+              <Button
+                onClick={handleConnect}
+                size="lg"
+                className="mt-4 bg-matrix-green/20 text-matrix-green border border-matrix-green/50 hover:bg-matrix-green/30 hover:shadow-[0_0_20px_rgba(0,255,0,0.4)] font-mono"
+              >
+                <Wallet className="w-4 h-4 mr-2" />
+                CONNECT_WALLET.exe
+              </Button>
+            )}
+
+            {isConnected && address && (
+              <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-black/50 backdrop-blur rounded border border-matrix-green/30">
+                <div className="w-2 h-2 bg-matrix-green rounded-full animate-pulse shadow-[0_0_8px_rgba(0,255,0,0.8)]" />
+                <span className="text-matrix-green font-mono text-sm">
+                  {address.slice(0, 8)}...{address.slice(-6)}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {isConnected ? (
+            <>
+              {process.env.NEXT_PUBLIC_NETWORK === "testnet" && (
+                <Alert className="border-matrix-orange bg-black/50 backdrop-blur">
+                  <AlertTriangle className="h-4 w-4 text-matrix-orange" />
+                  <AlertTitle className="text-matrix-orange font-mono">TESTNET MODE</AlertTitle>
+                  <AlertDescription className="text-matrix-orange/70">
+                    You are connected to the test network. Use test tokens only.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Stats Overview */}
+              <StakeStats
+                stakedBalance={stakedBalanceFormatted}
+                apy={apyNumber}
+                estimatedRewards={estimatedDailyRewards}
+              />
+
+              <WorldIdVerify />
+
+              <div className="grid lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Main Staking Card */}
+                  <Card className="border-matrix-green/30 bg-black/50 backdrop-blur shadow-[0_0_20px_rgba(0,255,0,0.1)]">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="text-2xl text-matrix-green font-mono">MANAGE_STAKE.exe</CardTitle>
+                          <CardDescription className="mt-2 text-matrix-green/60 font-mono text-xs">
+                            {">"} Stake or unstake your tokens_
+                          </CardDescription>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className="text-sm font-mono bg-matrix-green/20 text-matrix-green border-matrix-green/50"
+                        >
+                          APY {apyNumber}%
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Tab Buttons */}
+                      <div className="flex gap-2 p-1 bg-black/30 rounded-lg border border-matrix-green/20">
+                        <Button
+                          variant={activeTab === "stake" ? "default" : "ghost"}
+                          className={
+                            activeTab === "stake"
+                              ? "flex-1 bg-matrix-green/20 text-matrix-green border border-matrix-green/50 hover:bg-matrix-green/30 font-mono"
+                              : "flex-1 text-matrix-green/60 hover:text-matrix-green hover:bg-matrix-green/10 font-mono"
+                          }
+                          onClick={() => setActiveTab("stake")}
+                        >
+                          <TrendingUp className="w-4 h-4 mr-2" />
+                          STAKE
+                        </Button>
+                        <Button
+                          variant={activeTab === "unstake" ? "default" : "ghost"}
+                          className={
+                            activeTab === "unstake"
+                              ? "flex-1 bg-matrix-green/20 text-matrix-green border border-matrix-green/50 hover:bg-matrix-green/30 font-mono"
+                              : "flex-1 text-matrix-green/60 hover:text-matrix-green hover:bg-matrix-green/10 font-mono"
+                          }
+                          onClick={() => setActiveTab("unstake")}
+                        >
+                          <Clock className="w-4 h-4 mr-2" />
+                          UNSTAKE
+                        </Button>
+                      </div>
+
+                      {/* Balance Display */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 bg-black/30 rounded-lg border border-matrix-green/20">
+                          <p className="text-xs text-matrix-green/60 mb-1 font-mono">AVAILABLE</p>
+                          <p className="text-2xl font-bold font-mono text-matrix-green">
+                            {availableBalanceFormatted.toFixed(2)}
+                          </p>
+                          <p className="text-xs text-matrix-green/40 mt-1 font-mono">WORLD</p>
+                        </div>
+                        <div className="p-4 bg-black/30 rounded-lg border border-matrix-cyan/20">
+                          <p className="text-xs text-matrix-cyan/60 mb-1 font-mono">STAKED</p>
+                          <p className="text-2xl font-bold font-mono text-matrix-cyan">
+                            {stakedBalanceFormatted.toFixed(2)}
+                          </p>
+                          <p className="text-xs text-matrix-cyan/40 mt-1 font-mono">WORLD</p>
+                        </div>
+                      </div>
+
+                      {/* Forms */}
+                      {activeTab === "stake" ? (
+                        <StakeForm
+                          availableBalance={availableBalanceFormatted}
+                          onStake={handleStake}
+                          loading={loading}
+                        />
+                      ) : (
+                        <UnstakeForm
+                          stakedBalance={stakedBalanceFormatted}
+                          onUnstake={handleUnstake}
+                          loading={loading}
+                          isUnlocked={isUnlocked}
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Rewards Card */}
+                  {pendingRewardsFormatted > 0 && (
+                    <Card className="border-matrix-cyan/30 bg-black/50 backdrop-blur shadow-[0_0_15px_rgba(0,255,255,0.1)]">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <p className="text-sm text-matrix-cyan/60 font-mono">PENDING_REWARDS</p>
+                            <p className="text-3xl font-bold font-mono text-matrix-cyan">
+                              {pendingRewardsFormatted.toFixed(6)} WORLD
+                            </p>
+                            {isLocked && unlockDate && (
+                              <div className="flex items-center gap-2 text-xs text-matrix-orange mt-2 font-mono">
+                                <Clock className="w-3 h-3" />
+                                <span>
+                                  UNLOCK: {unlockDate.toLocaleDateString()} {unlockDate.toLocaleTimeString()}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            onClick={handleClaim}
+                            disabled={loading || isLocked}
+                            size="lg"
+                            className="bg-matrix-cyan/20 text-matrix-cyan border border-matrix-cyan/50 hover:bg-matrix-cyan/30 hover:shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50 font-mono"
+                          >
+                            {loading ? "PROCESSING..." : isLocked ? "LOCKED" : "CLAIM"}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+
+                <div className="space-y-6">
+                  <ContractInfo totalStaked={stakedBalance} contractBalance={availableBalance} />
+                  <TransactionHistory />
+                </div>
+              </div>
+
+              {/* Info Footer */}
+              <div className="text-center text-matrix-green/40 text-xs space-y-2 pb-8 font-mono">
+                <p>{">"} UNSTAKING_LOCK_PERIOD = 1_DAY</p>
+                <p>{">"} REWARDS_AUTO_CALCULATED = TRUE</p>
+                <p className="text-matrix-green/60">{">"} MATRIX_STAKE_v1.0.0</p>
+              </div>
+            </>
+          ) : (
+            <Card className="border-matrix-green/30 bg-black/50 backdrop-blur shadow-[0_0_20px_rgba(0,255,0,0.15)]">
+              <CardContent className="pt-12 pb-12 text-center space-y-4">
+                <Wallet className="w-16 h-16 mx-auto text-matrix-green opacity-60" />
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold text-matrix-green font-mono">CONNECT_WALLET</h3>
+                  <p className="text-matrix-green/60 text-balance max-w-sm mx-auto font-mono text-sm">
+                    {">"} Open this app in World App to connect your wallet and start staking_
+                  </p>
+                </div>
+                <Button
+                  onClick={handleConnect}
+                  size="lg"
+                  className="bg-matrix-green/20 text-matrix-green border border-matrix-green/50 hover:bg-matrix-green/30 hover:shadow-[0_0_20px_rgba(0,255,0,0.4)] font-mono"
+                >
+                  <Wallet className="w-4 h-4 mr-2" />
+                  CONNECT_WALLET.exe
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}

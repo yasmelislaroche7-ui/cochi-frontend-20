@@ -1,0 +1,30 @@
+{
+  "name": "Matrix Stake",
+  "short_name": "Matrix Stake",
+  "description": "Stake your tokens and earn rewards with Matrix-themed interface",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#001a00",
+  "theme_color": "#00ff00",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["finance", "defi"],
+  "screenshots": [
+    {
+      "src": "/screenshot.png",
+      "sizes": "1080x1920",
+      "type": "image/png"
+    }
+  ]
+}
