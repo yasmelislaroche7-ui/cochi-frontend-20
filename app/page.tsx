@@ -247,7 +247,7 @@ export default function StakingApp() {
                           </div>
                           <Button
                             onClick={handleClaim}
-                            disabled={loading || isLocked}
+                            disabled={loading || !!isLocked}
                             size="lg"
                             className="bg-matrix-cyan/20 text-matrix-cyan border border-matrix-cyan/50 hover:bg-matrix-cyan/30 hover:shadow-[0_0_15px_rgba(0,255,255,0.4)] disabled:opacity-50 font-mono"
                           >

@@ -40,11 +40,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        <MiniKitProvider>
-          {children}
-          <Toaster />
-          <Analytics />
-        </MiniKitProvider>
+        {children}
+        <Toaster />
+        <Analytics />
       </body>
     </html>
   )
