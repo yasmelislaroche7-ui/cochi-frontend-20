@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Shield, CheckCircle2 } from "lucide-react"
-import { MiniKit } from "@worldcoin/minikit-js"
+import { MiniKit, VerificationLevel } from "@worldcoin/minikit-js"
 
 interface WorldIdVerifyProps {
   onVerified?: (proof: any) => void
@@ -20,7 +20,7 @@ export function WorldIdVerify({ onVerified }: WorldIdVerifyProps) {
       const result = await MiniKit.commandsAsync.verify({
         action: "stake-verification",
         signal: "",
-        verification_level: "orb" as const,
+        verification_level: VerificationLevel.Orb,
       })
 
       if (result.finalPayload) {
