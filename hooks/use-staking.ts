@@ -34,7 +34,7 @@ export function useStaking() {
 
   const publicClient = createPublicClient({
     chain: worldchain,
-    transport: http(),
+    transport: http(process.env.NEXT_PUBLIC_RPC_URL || undefined),
   })
 
   const connectWallet = useCallback(async () => {
@@ -142,7 +142,7 @@ export function useStaking() {
       })
 
       if (finalPayload.status === "error") {
-        throw new Error(finalPayload.error || "Transaction failed")
+        throw new Error("Transaction failed")
       }
 
       // Refresh data after successful transaction
@@ -174,7 +174,7 @@ export function useStaking() {
       })
 
       if (finalPayload.status === "error") {
-        throw new Error(finalPayload.error || "Transaction failed")
+        throw new Error("Transaction failed")
       }
 
       // Refresh data after successful transaction
@@ -206,7 +206,7 @@ export function useStaking() {
       })
 
       if (finalPayload.status === "error") {
-        throw new Error(finalPayload.error || "Transaction failed")
+        throw new Error("Transaction failed")
       }
 
       // Refresh data after successful transaction
