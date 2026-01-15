@@ -56,7 +56,7 @@ export function useStaking() {
       }))
 
       return address
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error connecting wallet:", error)
       throw error
     }
@@ -73,7 +73,7 @@ export function useStaking() {
           abi: stakingAbi,
           functionName: "getUserInfo",
           args: [data.address as `0x${string}`],
-        }) as Promise<{ staked: bigint; pending: bigint; unlockTime: bigint; lastUpdate: bigint }>,
+        }) as Promise<[bigint, bigint, bigint, bigint]>,
         publicClient.readContract({
           address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
           abi: stakingAbi,
@@ -87,19 +87,20 @@ export function useStaking() {
         }) as Promise<bigint>,
       ])
 
+      const [staked, pending, unlockTime] = userInfo
       const currentTime = BigInt(Math.floor(Date.now() / 1000))
-      const isUnlocked = currentTime >= userInfo.unlockTime
+      const isUnlocked = currentTime >= unlockTime
 
       setData((prev) => ({
         ...prev,
-        stakedBalance: userInfo.staked,
-        pendingRewards: userInfo.pending,
-        unlockTime: userInfo.unlockTime,
+        stakedBalance: staked,
+        pendingRewards: pending,
+        unlockTime: unlockTime,
         availableBalance: tokenBalance,
         apr,
         isUnlocked,
       }))
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching staking data:", error)
     }
   }, [data.address, publicClient])
@@ -149,7 +150,7 @@ export function useStaking() {
       setTimeout(() => fetchStakingData(), 3000)
 
       return finalPayload.transaction_id
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error staking:", error)
       throw error
     } finally {
@@ -181,7 +182,7 @@ export function useStaking() {
       setTimeout(() => fetchStakingData(), 3000)
 
       return finalPayload.transaction_id
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error unstaking:", error)
       throw error
     } finally {
@@ -213,7 +214,7 @@ export function useStaking() {
       setTimeout(() => fetchStakingData(), 3000)
 
       return finalPayload.transaction_id
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error claiming rewards:", error)
       throw error
     } finally {

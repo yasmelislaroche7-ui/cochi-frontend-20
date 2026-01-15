@@ -46,7 +46,7 @@ export default function StakingApp() {
   const handleConnect = async () => {
     try {
       await connectWallet()
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to connect wallet:", error)
     }
   }
@@ -55,7 +55,7 @@ export default function StakingApp() {
     try {
       const amountWei = parseUnits(amount.toString(), 18)
       await stake(amountWei)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Stake failed:", error)
       throw error
     }
@@ -65,7 +65,7 @@ export default function StakingApp() {
     try {
       const amountWei = parseUnits(amount.toString(), 18)
       await unstake(amountWei)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Unstake failed:", error)
       throw error
     }
@@ -74,7 +74,7 @@ export default function StakingApp() {
   const handleClaim = async () => {
     try {
       await claim()
-    } catch (error) {
+    } catch (error: any) {
       console.error("Claim failed:", error)
       throw error
     }
