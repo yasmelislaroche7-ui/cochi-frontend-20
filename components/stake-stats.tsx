@@ -10,7 +10,7 @@ interface StakeStatsProps {
 export function StakeStats({ stakedBalance, apy, estimatedRewards }: StakeStatsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Card className="border-matrix-green/30 bg-black/50 backdrop-blur shadow-[0_0_15px_rgba(0,255,0,0.1)]">
+      <Card className="border-matrix-green/30 bg-black/50 backdrop-blur shadow-[0_0_15px_rgba(0,255,0,0.1)] hover:shadow-[0_0_25px_rgba(0,255,0,0.2)] transition-shadow duration-500">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div className="space-y-1">

@@ -108,7 +108,7 @@ export default function StakingApp() {
               </h1>
             </div>
             <p className="text-matrix-green/70 text-balance max-w-md mx-auto font-mono text-sm">
-              {">"} Stake your tokens and earn rewards with 1-day unlock period_
+              {">"} Stake your WORLD tokens and earn rewards with a secure 1-day lock period_
             </p>
 
             {!isConnected && (

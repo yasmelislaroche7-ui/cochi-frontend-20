@@ -74,6 +74,7 @@ export function useStaking() {
     if (!data.address) return
 
     try {
+      console.log("Fetching staking data for:", data.address)
       const [userInfo, apr, tokenBalance] = await Promise.all([
         publicClient.readContract({
           address: STAKING_CONTRACT_ADDRESS as `0x${string}`,

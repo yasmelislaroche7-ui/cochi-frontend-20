@@ -33,14 +33,7 @@
   --matrix-green: oklch(0.75 0.25 145);
   --matrix-cyan: oklch(0.7 0.18 200);
   --matrix-orange: oklch(0.68 0.22 60);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --matrix-glow: 0 0 15px oklch(0.75 0.25 145 / 0.4);
 }
 
 .dark {

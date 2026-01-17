@@ -32,8 +32,10 @@ export function MatrixRain() {
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
       // Matrix green text
-      ctx.fillStyle = "#0F0"
-      ctx.font = `${fontSize}px monospace`
+      ctx.fillStyle = "#00FF41" // Official Matrix Green
+      ctx.shadowBlur = 8
+      ctx.shadowColor = "#00FF41"
+      ctx.font = `${fontSize}px "Geist Mono"`
 
       for (let i = 0; i < drops.length; i++) {
         const text = chars[Math.floor(Math.random() * chars.length)]
