@@ -2,7 +2,7 @@ import type React from "react"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/toaster"
-import { MiniKitInit } from "@/components/minikit-init"
+import { MiniKitInit } from "../components/minikit-init"
 import "./globals.css"
 import type { Metadata } from "next"
 

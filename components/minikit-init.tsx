@@ -6,8 +6,12 @@ import { useEffect } from "react"
 export function MiniKitInit() {
   useEffect(() => {
     if (typeof window !== "undefined") {
-      MiniKit.install()
-      console.log("MiniKit installed")
+      try {
+        MiniKit.install()
+        console.log("MiniKit installed successfully")
+      } catch (e) {
+        console.error("Error installing MiniKit:", e)
+      }
     }
   }, [])
   return null
