@@ -7,6 +7,7 @@ export function MiniKitInit() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
+        // Essential for World App to recognize the MiniApp is ready
         MiniKit.install()
         console.log("MiniKit installed successfully")
       } catch (e) {

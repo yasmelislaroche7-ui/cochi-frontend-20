@@ -2,7 +2,7 @@ import type React from "react"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/toaster"
-import { MiniKitInit } from "../components/minikit-init"
+import { MiniKitInit } from "@/components/minikit-init"
 import "./globals.css"
 import type { Metadata } from "next"
 
@@ -21,7 +21,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className="font-sans antialiased bg-black text-white">
+      <head>
+        {/* Basic meta tags required by World App */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+      </head>
+      <body className={`${_geist.className} font-sans antialiased bg-black text-white`}>
         <MiniKitInit />
         {children}
         <Toaster />
