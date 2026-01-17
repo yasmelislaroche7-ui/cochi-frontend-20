@@ -43,8 +43,8 @@ export function StakeForm({ availableBalance, onStake, loading }: StakeFormProps
       await onStake(numAmount)
       setAmount("")
       toast({
-        title: "Stake successful!",
-        description: `You staked ${numAmount.toFixed(2)} WORLD`,
+        title: "Stake initialized",
+        description: `Processing ${numAmount.toFixed(2)} WORLD stake. Please wait for confirmation.`,
       })
     } catch (error: any) {
       toast({

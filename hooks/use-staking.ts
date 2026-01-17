@@ -139,12 +139,15 @@ export function useStaking() {
         args: [amount],
       })
 
+      console.log("Sending transactions:", transactions)
+
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: transactions,
       })
 
       if (finalPayload.status === "error") {
-        throw new Error("Transaction failed")
+        console.error("Transaction payload error:", finalPayload)
+        throw new Error(finalPayload.error_code || "Transaction failed")
       }
 
       // Refresh data after successful transaction
