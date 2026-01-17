@@ -17,8 +17,9 @@ export function WorldIdVerify({ onVerified }: WorldIdVerifyProps) {
   const handleVerify = async () => {
     setLoading(true)
     try {
+      const action = process.env.NEXT_PUBLIC_WORLD_ID_ACTION || process.env.NEXT_PUBLIC_WORLD_ID_ACCION || "stake-verification";
       const result = await MiniKit.commandsAsync.verify({
-        action: process.env.NEXT_PUBLIC_WORLD_ID_ACTION || "stake-verification",
+        action: action,
         signal: "",
         verification_level: VerificationLevel.Orb,
       })
