@@ -97,7 +97,7 @@ export function useStaking() {
         pendingRewards: pending,
         unlockTime: unlockTime,
         availableBalance: tokenBalance,
-        apr,
+        apr: apr || 1500n, // Fallback APR if contract returns 0
         isUnlocked,
       }))
     } catch (error: any) {
