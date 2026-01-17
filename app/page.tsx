@@ -45,7 +45,10 @@ export default function StakingApp() {
 
   const handleConnect = async () => {
     try {
-      await connectWallet()
+      const addr = await connectWallet()
+      if (!addr) {
+        console.warn("Could not connect wallet via MiniKit")
+      }
     } catch (error: any) {
       console.error("Failed to connect wallet:", error)
     }

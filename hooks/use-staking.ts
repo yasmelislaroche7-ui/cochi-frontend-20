@@ -38,8 +38,9 @@ export function useStaking() {
   })
 
   const connectWallet = useCallback(async () => {
-    if (!MiniKit.isInstalled()) {
-      throw new Error("Please open this app in World App")
+    if (typeof window === "undefined" || !MiniKit.isInstalled()) {
+      console.error("MiniKit not installed or window undefined")
+      return null
     }
 
     try {
