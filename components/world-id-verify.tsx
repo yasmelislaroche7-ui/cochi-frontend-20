@@ -23,7 +23,11 @@ export function WorldIdVerify({ onVerified }: WorldIdVerifyProps) {
         verification_level: VerificationLevel.Orb,
       })
 
-      if (result.finalPayload) {
+      if (result.finalPayload.status === "error") {
+        throw new Error(result.finalPayload.error_code || "Verification failed")
+      }
+
+      if (result.finalPayload.status === "success") {
         setIsVerified(true)
         onVerified?.(result.finalPayload)
       }
