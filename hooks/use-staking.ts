@@ -38,13 +38,19 @@ export function useStaking() {
   })
 
   const connectWallet = useCallback(async () => {
-    if (typeof window === "undefined" || !MiniKit.isInstalled()) {
-      console.error("MiniKit not installed or window undefined")
-      return null
+    console.log("Attempting to connect wallet...")
+    if (typeof window === "undefined") return null;
+    
+    // MiniKit might take a moment to be available even if installed
+    if (!MiniKit.isInstalled()) {
+      console.warn("MiniKit not detected as installed yet")
+      // In World App environment, sometimes isInstalled() returns false initially
+      // We can check if we're in the right environment by other means or just try
     }
 
     try {
       const address = MiniKit.walletAddress
+      console.log("MiniKit wallet address:", address)
 
       if (!address) {
         throw new Error("No wallet address available")

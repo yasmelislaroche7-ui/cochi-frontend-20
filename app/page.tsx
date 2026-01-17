@@ -34,6 +34,15 @@ export default function StakingApp() {
     claim,
   } = useStaking()
 
+  // Auto-connect on mount if in World App
+  useState(() => {
+    if (typeof window !== "undefined") {
+      setTimeout(() => {
+        handleConnect()
+      }, 500)
+    }
+  })
+
   const apyNumber = Number(apr) / 100
   const stakedBalanceFormatted = Number(formatUnits(stakedBalance, 18))
   const availableBalanceFormatted = Number(formatUnits(availableBalance, 18))

@@ -10,6 +10,12 @@ export function MiniKitInit() {
         // Essential for World App to recognize the MiniApp is ready
         MiniKit.install()
         console.log("MiniKit installed successfully")
+        
+        // Signal that the app is ready for World App
+        // This can help with the "loading image" getting stuck
+        if (window.parent) {
+          window.parent.postMessage({ type: "ready" }, "*")
+        }
       } catch (e) {
         console.error("Error installing MiniKit:", e)
       }
