@@ -5,14 +5,27 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Shield, CheckCircle2 } from "lucide-react"
 import { MiniKit, VerificationLevel } from "@worldcoin/minikit-js"
+import { useEffect, useRef } from "react"
 
 interface WorldIdVerifyProps {
   onVerified?: (proof: any) => void
+  autoVerify?: boolean
 }
 
-export function WorldIdVerify({ onVerified }: WorldIdVerifyProps) {
+export function WorldIdVerify({ onVerified, autoVerify }: WorldIdVerifyProps) {
   const [isVerified, setIsVerified] = useState(false)
   const [loading, setLoading] = useState(false)
+  const autoVerifyTried = useRef(false)
+
+  useEffect(() => {
+    if (autoVerify && !isVerified && !loading && !autoVerifyTried.current) {
+      autoVerifyTried.current = true
+      // Short delay to ensure MiniKit is ready
+      setTimeout(() => {
+        handleVerify()
+      }, 1000)
+    }
+  }, [autoVerify, isVerified])
 
   const handleVerify = async () => {
     setLoading(true)

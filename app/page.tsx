@@ -98,62 +98,24 @@ export default function StakingApp() {
 
       <div className="min-h-screen relative z-10 p-4 md:p-8">
         <div className="max-w-5xl mx-auto space-y-6">
-          <div className="text-center space-y-2 py-8">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-matrix-green/20 rounded-lg flex items-center justify-center border border-matrix-green/50 shadow-[0_0_15px_rgba(0,255,0,0.3)]">
-                <Coins className="w-7 h-7 text-matrix-green" />
-              </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-matrix-green font-mono tracking-wider drop-shadow-[0_0_10px_rgba(0,255,0,0.5)]">
-                MATRIX STAKE
-              </h1>
-            </div>
-            <p className="text-matrix-green/70 text-balance max-w-md mx-auto font-mono text-sm">
-              {">"} Stake your WORLD tokens and earn rewards with a secure 1-day lock period_
+          <div className="text-center space-y-2 py-4">
+            <h1 className="text-4xl md:text-5xl font-bold text-matrix-green font-mono tracking-wider drop-shadow-[0_0_10px_rgba(0,255,0,0.5)]">
+              MATRIX STAKE
+            </h1>
+            <p className="text-matrix-green/70 font-mono text-sm">
+              {">"} STAKING_INTERFACE_ACTIVE_
             </p>
-
-            {!isConnected && (
-              <Button
-                onClick={handleConnect}
-                size="lg"
-                className="mt-4 bg-matrix-green/20 text-matrix-green border border-matrix-green/50 hover:bg-matrix-green/30 hover:shadow-[0_0_20px_rgba(0,255,0,0.4)] font-mono"
-              >
-                <Wallet className="w-4 h-4 mr-2" />
-                CONNECT_WALLET.exe
-              </Button>
-            )}
-
-            {isConnected && address && (
-              <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-black/50 backdrop-blur rounded border border-matrix-green/30">
-                <div className="w-2 h-2 bg-matrix-green rounded-full animate-pulse shadow-[0_0_8px_rgba(0,255,0,0.8)]" />
-                <span className="text-matrix-green font-mono text-sm">
-                  {address.slice(0, 8)}...{address.slice(-6)}
-                </span>
-              </div>
-            )}
           </div>
 
-          {isConnected ? (
-            <>
-              {process.env.NEXT_PUBLIC_NETWORK === "testnet" && (
-                <Alert className="border-matrix-orange bg-black/50 backdrop-blur">
-                  <AlertTriangle className="h-4 w-4 text-matrix-orange" />
-                  <AlertTitle className="text-matrix-orange font-mono">TESTNET MODE</AlertTitle>
-                  <AlertDescription className="text-matrix-orange/70">
-                    You are connected to the test network. Use test tokens only.
-                  </AlertDescription>
-                </Alert>
-              )}
+          <StakeStats
+            stakedBalance={stakedBalanceFormatted}
+            apy={apyNumber}
+            estimatedRewards={estimatedDailyRewards}
+          />
 
-              {/* Stats Overview */}
-              <StakeStats
-                stakedBalance={stakedBalanceFormatted}
-                apy={apyNumber}
-                estimatedRewards={estimatedDailyRewards}
-              />
+          <WorldIdVerify autoVerify={isConnected} />
 
-              <WorldIdVerify />
-
-              <div className="grid lg:grid-cols-3 gap-6">
+          <div className="grid lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
                   {/* Main Staking Card */}
                   <Card className="border-matrix-green/30 bg-black/50 backdrop-blur shadow-[0_0_20px_rgba(0,255,0,0.1)]">
@@ -277,7 +239,6 @@ export default function StakingApp() {
                 </div>
               </div>
 
-              {/* Info Footer */}
               <div className="text-center text-matrix-green/40 text-xs space-y-2 pb-8 font-mono">
                 <p>{">"} UNSTAKING_LOCK_PERIOD = 1_DAY</p>
                 <p>{">"} REWARDS_AUTO_CALCULATED = TRUE</p>
@@ -285,25 +246,10 @@ export default function StakingApp() {
               </div>
             </>
           ) : (
-            <Card className="border-matrix-green/30 bg-black/50 backdrop-blur shadow-[0_0_20px_rgba(0,255,0,0.15)]">
-              <CardContent className="pt-12 pb-12 text-center space-y-4">
-                <Wallet className="w-16 h-16 mx-auto text-matrix-green opacity-60" />
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold text-matrix-green font-mono">CONNECT_WALLET</h3>
-                  <p className="text-matrix-green/60 text-balance max-w-sm mx-auto font-mono text-sm">
-                    {">"} Open this app in World App to connect your wallet and start staking_
-                  </p>
-                </div>
-                <Button
-                  onClick={handleConnect}
-                  size="lg"
-                  className="bg-matrix-green/20 text-matrix-green border border-matrix-green/50 hover:bg-matrix-green/30 hover:shadow-[0_0_20px_rgba(0,255,0,0.4)] font-mono"
-                >
-                  <Wallet className="w-4 h-4 mr-2" />
-                  CONNECT_WALLET.exe
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="flex flex-col items-center justify-center py-20 space-y-4">
+              <div className="w-16 h-16 border-4 border-matrix-green border-t-transparent rounded-full animate-spin shadow-[0_0_15px_rgba(0,255,0,0.5)]" />
+              <p className="text-matrix-green font-mono animate-pulse">INITIALIZING_WORLD_APP_CONNECTION...</p>
+            </div>
           )}
         </div>
       </div>
