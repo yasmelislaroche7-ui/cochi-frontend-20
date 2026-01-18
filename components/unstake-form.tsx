@@ -47,7 +47,7 @@ export function UnstakeForm({ stakedBalance, onUnstake, loading, isUnlocked }: U
       setAmount("")
       toast({
         title: "Unstake initiated",
-        description: `${numAmount.toFixed(2)} WORLD will be available in 1 day`,
+        description: `${numAmount.toFixed(2)} MTXs will be available in 1 day`,
       })
     } catch (error: any) {
       toast({
