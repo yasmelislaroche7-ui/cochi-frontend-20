@@ -19,11 +19,14 @@ export function WorldIdVerify({ onVerified, autoVerify }: WorldIdVerifyProps) {
 
   useEffect(() => {
     if (autoVerify && !isVerified && !loading && !autoVerifyTried.current) {
+      // Don't auto-verify if we're not in the World App environment properly
+      if (typeof window !== "undefined" && window.location.hostname === "localhost") return
+      
       autoVerifyTried.current = true
-      // Short delay to ensure MiniKit is ready
+      // Longer delay to ensure MiniKit is fully stable and wallet connection is finalized
       setTimeout(() => {
         handleVerify()
-      }, 1000)
+      }, 2000)
     }
   }, [autoVerify, isVerified])
 
