@@ -33,7 +33,13 @@ export function WorldIdVerify({ onVerified, autoVerify }: WorldIdVerifyProps) {
   const handleVerify = async () => {
     setLoading(true)
     try {
+      if (!MiniKit.isInstalled()) {
+        throw new Error("MiniKit not installed or ready. Please try again.")
+      }
+      
       const action = process.env.NEXT_PUBLIC_WORLD_ID_ACTION || process.env.NEXT_PUBLIC_WORLD_ID_ACCION || "stake-verification";
+      console.log("Starting verification with action:", action);
+      
       const result = await MiniKit.commandsAsync.verify({
         action: action,
         signal: "",
@@ -41,15 +47,19 @@ export function WorldIdVerify({ onVerified, autoVerify }: WorldIdVerifyProps) {
       })
 
       if (result.finalPayload.status === "error") {
-        throw new Error(result.finalPayload.error_code || "Verification failed")
+        const errorMsg = result.finalPayload.error_code || "Verification failed";
+        console.error("Verification Error Payload:", result.finalPayload);
+        throw new Error(errorMsg)
       }
 
       if (result.finalPayload.status === "success") {
+        console.log("Verification Success!");
         setIsVerified(true)
         onVerified?.(result.finalPayload)
       }
-    } catch (error) {
-      console.error("Verification failed:", error)
+    } catch (error: any) {
+      console.error("Verification error caught:", error)
+      alert(`Verification Error: ${error.message || "Unknown error"}`)
     } finally {
       setLoading(false)
     }

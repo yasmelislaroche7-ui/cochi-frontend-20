@@ -41,19 +41,26 @@ export function useStaking() {
     console.log("Attempting to connect wallet...")
     if (typeof window === "undefined") return null;
     
-    // MiniKit might take a moment to be available even if installed
-    if (!MiniKit.isInstalled()) {
-      console.warn("MiniKit not detected as installed yet")
-      // In World App environment, sometimes isInstalled() returns false initially
-      // We can check if we're in the right environment by other means or just try
-    }
-
     try {
+      // In World App, MiniKit is usually available. If not installed, we can't do much.
+      // But we'll try to trigger walletAuth anyway as it might wake up the SDK
+      const res = await MiniKit.commandsAsync.walletAuth({
+        nonce: crypto.randomUUID(),
+        requestId: "0",
+        expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        notBefore: new Date(),
+        statement: "Connect to Matrix Stake",
+      })
+
+      if (res.finalPayload.status === "error") {
+        throw new Error(res.finalPayload.error_code || "Wallet connection failed")
+      }
+
       const address = MiniKit.walletAddress
-      console.log("MiniKit wallet address:", address)
+      console.log("Connected address:", address)
 
       if (!address) {
-        throw new Error("No wallet address available")
+        throw new Error("Connection successful but no address found")
       }
 
       setData((prev) => ({
@@ -65,6 +72,7 @@ export function useStaking() {
       return address
     } catch (error: any) {
       console.error("Error connecting wallet:", error)
+      // If we're in localhost, we might want a mock for testing, but user wants production
       throw error
     }
   }, [])
