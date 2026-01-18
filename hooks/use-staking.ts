@@ -158,7 +158,7 @@ export function useStaking() {
       }
 
       // Refresh data after successful transaction
-      setTimeout(() => fetchStakingData(), 3000)
+      setTimeout(() => fetchStakingData(), 5000)
 
       return finalPayload.transaction_id
     } catch (error: any) {
@@ -190,7 +190,7 @@ export function useStaking() {
       }
 
       // Refresh data after successful transaction
-      setTimeout(() => fetchStakingData(), 3000)
+      setTimeout(() => fetchStakingData(), 5000)
 
       return finalPayload.transaction_id
     } catch (error: any) {
@@ -222,7 +222,7 @@ export function useStaking() {
       }
 
       // Refresh data after successful transaction
-      setTimeout(() => fetchStakingData(), 3000)
+      setTimeout(() => fetchStakingData(), 5000)
 
       return finalPayload.transaction_id
     } catch (error: any) {
