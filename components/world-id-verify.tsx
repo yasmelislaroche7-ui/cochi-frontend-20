@@ -37,8 +37,12 @@ export function WorldIdVerify({ onVerified, autoVerify }: WorldIdVerifyProps) {
         throw new Error("MiniKit not installed or ready. Please try again.")
       }
       
-      const action = process.env.NEXT_PUBLIC_WORLD_ID_ACTION || process.env.NEXT_PUBLIC_WORLD_ID_ACCION || "stake-verification";
-      console.log("Starting verification with action:", action);
+      // World App handles verification via MiniKit, no external URL needed. 
+      // The error might be due to a missing App ID or action mismatch.
+      const action = "stake-verification"; // Constant for stability
+      const appId = process.env.NEXT_PUBLIC_APP_ID || "app_9e44184e40f240dfb5b8976bde22b548";
+      
+      console.log("Starting verification with action:", action, "App ID:", appId);
       
       const result = await MiniKit.commandsAsync.verify({
         action: action,

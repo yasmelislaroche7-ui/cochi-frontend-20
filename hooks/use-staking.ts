@@ -33,8 +33,14 @@ export function useStaking() {
   const [loading, setLoading] = useState(false)
 
   const publicClient = createPublicClient({
-    chain: worldchain,
-    transport: http(process.env.NEXT_PUBLIC_RPC_URL || undefined),
+    chain: {
+      ...worldchain,
+      id: 480,
+      rpcUrls: {
+        default: { http: ["https://worldchain-mainnet.g.alchemy.com/public"] },
+      },
+    },
+    transport: http("https://worldchain-mainnet.g.alchemy.com/public"),
   })
 
   const connectWallet = useCallback(async () => {
@@ -103,17 +109,17 @@ export function useStaking() {
         }) as Promise<bigint>,
       ])
 
-      const [staked, pending, unlockTime] = userInfo
+      const [staked, pending, unlockTime] = userInfo || [0n, 0n, 0n]
       const currentTime = BigInt(Math.floor(Date.now() / 1000))
-      const isUnlocked = currentTime >= unlockTime
+      const isUnlocked = currentTime >= (unlockTime || 0n)
 
       setData((prev) => ({
         ...prev,
-        stakedBalance: staked,
-        pendingRewards: pending,
-        unlockTime: unlockTime,
-        availableBalance: tokenBalance,
-        apr: apr || 1500n, // Fallback APR if contract returns 0
+        stakedBalance: staked || 0n,
+        pendingRewards: pending || 0n,
+        unlockTime: unlockTime || 0n,
+        availableBalance: tokenBalance || 0n,
+        apr: (apr && apr > 0n) ? apr : 1500n, 
         isUnlocked,
       }))
     } catch (error: any) {
