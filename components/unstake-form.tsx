@@ -64,75 +64,52 @@ export function UnstakeForm({ stakedBalance, onUnstake, loading, isUnlocked }: U
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <Alert className="py-2 border-matrix-orange/30 bg-matrix-orange/5">
+        <AlertDescription className="text-[10px] text-matrix-orange font-mono leading-tight">
           {isUnlocked
-            ? "You can unstake your tokens now"
-            : "Unstaking requires a 1-day lock period before you can claim your tokens"}
+            ? "> UNLOCK_CONFIRMED: READY_TO_WITHDRAW"
+            : "> LOCK_ACTIVE: 1_DAY_DELAY_REQUIRED"}
         </AlertDescription>
       </Alert>
 
-      <div className="space-y-2">
-        <Label htmlFor="unstake-amount">Amount to Unstake</Label>
-        <Input
-          id="unstake-amount"
-          type="number"
-          step="0.000001"
-          placeholder="0.00"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="text-lg font-mono"
-          disabled={loading}
-        />
+      <div className="space-y-1">
+        <Label htmlFor="unstake-amount" className="text-[10px] uppercase text-matrix-cyan/60 font-mono">Amount to Unstake</Label>
+        <div className="relative">
+          <Input
+            id="unstake-amount"
+            type="number"
+            step="0.000001"
+            placeholder="0.00"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="text-sm font-mono bg-black/40 border-matrix-cyan/30 text-matrix-cyan h-9"
+            disabled={loading}
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-matrix-cyan/40 font-mono">
+            MTXs
+          </div>
+        </div>
       </div>
 
-      <div className="flex gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setPercentage(25)}
-          className="flex-1"
-          disabled={loading}
-        >
-          25%
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setPercentage(50)}
-          className="flex-1"
-          disabled={loading}
-        >
-          50%
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setPercentage(75)}
-          className="flex-1"
-          disabled={loading}
-        >
-          75%
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setPercentage(100)}
-          className="flex-1"
-          disabled={loading}
-        >
-          Max
-        </Button>
+      <div className="flex gap-1">
+        {[25, 50, 75, 100].map((pc) => (
+          <Button
+            key={pc}
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setPercentage(pc)}
+            className="flex-1 h-7 text-[10px] border-matrix-cyan/20 text-matrix-cyan hover:bg-matrix-cyan/10"
+            disabled={loading}
+          >
+            {pc === 100 ? "MAX" : `${pc}%`}
+          </Button>
+        ))}
       </div>
 
-      <Button type="submit" size="lg" variant="secondary" className="w-full" disabled={loading}>
-        {loading ? "Processing..." : "Unstake Tokens"}
+      <Button type="submit" size="sm" variant="secondary" className="w-full bg-matrix-cyan/20 text-matrix-cyan border border-matrix-cyan/50 hover:bg-matrix-cyan/30 font-mono h-9" disabled={loading}>
+        {loading ? "EXECUTING..." : "CONFIRM_UNSTAKE"}
       </Button>
     </form>
   )

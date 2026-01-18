@@ -61,66 +61,44 @@ export function StakeForm({ availableBalance, onStake, loading }: StakeFormProps
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="stake-amount">Amount to Stake</Label>
-        <Input
-          id="stake-amount"
-          type="number"
-          step="0.000001"
-          placeholder="0.00"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="text-lg font-mono"
-          disabled={loading}
-        />
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <div className="space-y-1">
+        <Label htmlFor="stake-amount" className="text-[10px] uppercase text-matrix-green/60 font-mono">Amount to Stake</Label>
+        <div className="relative">
+          <Input
+            id="stake-amount"
+            type="number"
+            step="0.000001"
+            placeholder="0.00"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="text-sm font-mono bg-black/40 border-matrix-green/30 text-matrix-green h-9"
+            disabled={loading}
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-matrix-green/40 font-mono">
+            MTXs
+          </div>
+        </div>
       </div>
 
-      <div className="flex gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setPercentage(25)}
-          className="flex-1"
-          disabled={loading}
-        >
-          25%
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setPercentage(50)}
-          className="flex-1"
-          disabled={loading}
-        >
-          50%
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setPercentage(75)}
-          className="flex-1"
-          disabled={loading}
-        >
-          75%
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setPercentage(100)}
-          className="flex-1"
-          disabled={loading}
-        >
-          Max
-        </Button>
+      <div className="flex gap-1">
+        {[25, 50, 75, 100].map((pc) => (
+          <Button
+            key={pc}
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setPercentage(pc)}
+            className="flex-1 h-7 text-[10px] border-matrix-green/20 text-matrix-green hover:bg-matrix-green/10"
+            disabled={loading}
+          >
+            {pc === 100 ? "MAX" : `${pc}%`}
+          </Button>
+        ))}
       </div>
 
-      <Button type="submit" size="lg" className="w-full" disabled={loading}>
-        {loading ? "Processing..." : "Stake Tokens"}
+      <Button type="submit" size="sm" className="w-full bg-matrix-green text-black hover:bg-matrix-green/90 font-mono h-9 shadow-[0_0_10px_rgba(0,255,0,0.3)]" disabled={loading}>
+        {loading ? "EXECUTING..." : "CONFIRM_STAKE"}
       </Button>
     </form>
   )

@@ -135,15 +135,15 @@ export default function StakingApp() {
             <div className="lg:col-span-2 space-y-4">
               {/* Main Staking Card */}
               <Card className="border-matrix-green/30 bg-black/50 backdrop-blur shadow-[0_0_20px_rgba(0,255,0,0.1)]">
-                <CardHeader className="p-4 pb-2">
+                <CardHeader className="p-3 pb-1">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg text-matrix-green font-mono">MANAGE_STAKE.exe</CardTitle>
-                    <Badge variant="outline" className="text-[10px] bg-matrix-green/20 text-matrix-green border-matrix-green/50">
+                    <CardTitle className="text-sm text-matrix-green font-mono uppercase">Manage_Stake</CardTitle>
+                    <Badge variant="outline" className="text-[9px] bg-matrix-green/20 text-matrix-green border-matrix-green/50">
                       APR {apyNumber}%
                     </Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="p-4 pt-2 space-y-4">
+                <CardContent className="p-3 pt-1 space-y-3">
                   {/* Tab Buttons */}
                   <div className="flex gap-2 p-1 bg-black/30 rounded-lg border border-matrix-green/20">
                     <Button
