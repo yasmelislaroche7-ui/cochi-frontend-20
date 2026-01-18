@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Shield, CheckCircle2 } from "lucide-react"
 import { MiniKit, VerificationLevel } from "@worldcoin/minikit-js"
 import { useEffect, useRef } from "react"
+import { useStaking } from "@/hooks/use-staking"
 
 interface WorldIdVerifyProps {
   onVerified?: (proof: any) => void
@@ -13,6 +14,7 @@ interface WorldIdVerifyProps {
 }
 
 export function WorldIdVerify({ onVerified, autoVerify }: WorldIdVerifyProps) {
+  const { address } = useStaking()
   const [isVerified, setIsVerified] = useState(false)
   const [loading, setLoading] = useState(false)
   const autoVerifyTried = useRef(false)
@@ -37,16 +39,15 @@ export function WorldIdVerify({ onVerified, autoVerify }: WorldIdVerifyProps) {
         throw new Error("MiniKit not installed or ready. Please try again.")
       }
       
-      // World App handles verification via MiniKit, no external URL needed. 
-      // The error might be due to a missing App ID or action mismatch.
-      const action = "stake-verification"; // Constant for stability
-      const appId = process.env.NEXT_PUBLIC_APP_ID || "app_9e44184e40f240dfb5b8976bde22b548";
+      // Production verified App ID and Action
+      const action = "stake-verification";
+      const appId = "app_9e44184e40f240dfb5b8976bde22b548";
       
       console.log("Starting verification with action:", action, "App ID:", appId);
       
       const result = await MiniKit.commandsAsync.verify({
         action: action,
-        signal: "",
+        signal: address || "", // Using address as signal for better tracking
         verification_level: VerificationLevel.Orb,
       })
 

@@ -33,14 +33,11 @@ export function useStaking() {
   const [loading, setLoading] = useState(false)
 
   const publicClient = createPublicClient({
-    chain: {
-      ...worldchain,
-      id: 480,
-      rpcUrls: {
-        default: { http: ["https://worldchain-mainnet.g.alchemy.com/public"] },
-      },
-    },
+    chain: worldchain,
     transport: http("https://worldchain-mainnet.g.alchemy.com/public"),
+    batch: {
+      multicall: true,
+    },
   })
 
   const connectWallet = useCallback(async () => {
@@ -132,13 +129,18 @@ export function useStaking() {
 
     setLoading(true)
     try {
-      // Check allowance
-      const allowance = (await publicClient.readContract({
-        address: TOKEN_CONTRACT_ADDRESS as `0x${string}`,
-        abi: erc20Abi,
-        functionName: "allowance",
-        args: [data.address as `0x${string}`, STAKING_CONTRACT_ADDRESS as `0x${string}`],
-      })) as bigint
+      // Check allowance with a slightly more robust error handling
+      let allowance = 0n;
+      try {
+        allowance = (await publicClient.readContract({
+          address: TOKEN_CONTRACT_ADDRESS as `0x${string}`,
+          abi: erc20Abi,
+          functionName: "allowance",
+          args: [data.address as `0x${string}`, STAKING_CONTRACT_ADDRESS as `0x${string}`],
+        })) as bigint
+      } catch (e) {
+        console.warn("Could not fetch allowance, assuming 0", e);
+      }
 
       const transactions = []
 
