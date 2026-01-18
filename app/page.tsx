@@ -43,7 +43,7 @@ export default function StakingApp() {
     }
   }, [])
 
-  const apyNumber = Number(apr) / 100
+  const apyNumber = Number(apr)
   const stakedBalanceFormatted = Number(formatUnits(stakedBalance, 18))
   const availableBalanceFormatted = Number(formatUnits(availableBalance, 18))
   const pendingRewardsFormatted = Number(formatUnits(pendingRewards, 18))

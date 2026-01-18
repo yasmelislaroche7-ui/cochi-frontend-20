@@ -116,7 +116,7 @@ export function useStaking() {
         pendingRewards: pending || 0n,
         unlockTime: unlockTime || 0n,
         availableBalance: tokenBalance || 0n,
-        apr: (apr && apr > 0n) ? apr : 1500n, 
+        apr: (apr && apr > 0n) ? apr : 500n, 
         isUnlocked,
       }))
     } catch (error: any) {
