@@ -135,42 +135,35 @@ export function useStaking() {
       const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
-      // 1. Send Approve transaction
-      console.log("Requesting approval signature...")
-      const approveRes = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [
-          {
-            address: tokenAddress,
-            abi: erc20Abi,
-            functionName: "approve",
-            args: [stakingAddress, amount.toString()],
-          }
-        ],
+      // We MUST send both as a single transaction array to avoid simulation errors
+      // if we send them separately, the second transaction (stake) fails simulation 
+      // because the first (approve) hasn't been mined yet.
+      const transactions = [
+        {
+          address: tokenAddress,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [stakingAddress, amount.toString()],
+        },
+        {
+          address: stakingAddress,
+          abi: stakingAbi,
+          functionName: "stake",
+          args: [amount.toString()],
+        }
+      ];
+
+      console.log("Requesting transaction batch signature...")
+      const res = await MiniKit.commandsAsync.sendTransaction({
+        transaction: transactions,
       })
 
-      if (approveRes.finalPayload.status === "error") {
-        throw new Error(approveRes.finalPayload.error_code || "Approval failed or rejected")
-      }
-
-      // 2. Send Stake transaction after approval is signed
-      console.log("Requesting stake signature...")
-      const stakeRes = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [
-          {
-            address: stakingAddress,
-            abi: stakingAbi,
-            functionName: "stake",
-            args: [amount.toString()],
-          }
-        ],
-      })
-
-      if (stakeRes.finalPayload.status === "error") {
-        throw new Error(stakeRes.finalPayload.error_code || "Stake failed or rejected")
+      if (res.finalPayload.status === "error") {
+        throw new Error(res.finalPayload.error_code || "Transaction failed or rejected")
       }
 
       await fetchStakingData()
-      return stakeRes.finalPayload.transaction_id
+      return res.finalPayload.transaction_id
     } catch (error: any) {
       console.error("Error staking:", error)
       throw error
