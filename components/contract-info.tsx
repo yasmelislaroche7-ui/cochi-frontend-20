@@ -79,6 +79,16 @@ export function ContractInfo({ totalStaked = 0n, contractBalance = 0n }: Contrac
               <ExternalLink className="w-4 h-4 text-matrix-green" />
             </a>
           </div>
+          <div className="mt-1">
+            <a 
+              href="https://t.me/+D77TanTApCU4OGIx" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-[10px] text-matrix-cyan hover:text-matrix-cyan/80 font-mono flex items-center gap-1"
+            >
+              JOIN_OFFICIAL_TELEGRAM_GROUP
+            </a>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 pt-4 border-t border-matrix-green/20">

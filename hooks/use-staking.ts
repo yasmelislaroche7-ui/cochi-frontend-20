@@ -129,29 +129,24 @@ export function useStaking() {
 
     setLoading(true)
     try {
-      const transactions = []
+      console.log("Preparing stake transaction for amount:", amount)
 
-      // Always include approve to ensure balance is recognized by World App/Contract
-      // This matches the "Permitir transacción" flow in the example
-      transactions.push({
-        address: TOKEN_CONTRACT_ADDRESS as `0x${string}`,
-        abi: erc20Abi,
-        functionName: "approve",
-        args: [STAKING_CONTRACT_ADDRESS, amount],
-      })
-
-      // Stake
-      transactions.push({
-        address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
-        abi: stakingAbi,
-        functionName: "stake",
-        args: [amount],
-      })
-
-      console.log("Sending transactions:", transactions)
-
+      // Use a single command to ensure the modal pops up correctly
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: transactions,
+        transaction: [
+          {
+            address: TOKEN_CONTRACT_ADDRESS as `0x${string}`,
+            abi: erc20Abi,
+            functionName: "approve",
+            args: [STAKING_CONTRACT_ADDRESS, amount],
+          },
+          {
+            address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
+            abi: stakingAbi,
+            functionName: "stake",
+            args: [amount],
+          },
+        ],
       })
 
       if (finalPayload.status === "error") {
@@ -160,7 +155,7 @@ export function useStaking() {
       }
 
       // Refresh data after successful transaction
-      setTimeout(() => fetchStakingData(), 5000)
+      setTimeout(() => fetchStakingData(), 3000)
 
       return finalPayload.transaction_id
     } catch (error: any) {
@@ -176,6 +171,8 @@ export function useStaking() {
 
     setLoading(true)
     try {
+      console.log("Preparing unstake transaction for amount:", amount)
+      
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
@@ -188,11 +185,12 @@ export function useStaking() {
       })
 
       if (finalPayload.status === "error") {
-        throw new Error("Transaction failed")
+        console.error("Unstake error:", finalPayload)
+        throw new Error(finalPayload.error_code || "Transaction failed")
       }
 
       // Refresh data after successful transaction
-      setTimeout(() => fetchStakingData(), 5000)
+      setTimeout(() => fetchStakingData(), 3000)
 
       return finalPayload.transaction_id
     } catch (error: any) {
@@ -208,6 +206,8 @@ export function useStaking() {
 
     setLoading(true)
     try {
+      console.log("Preparing claim transaction")
+      
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
@@ -220,11 +220,12 @@ export function useStaking() {
       })
 
       if (finalPayload.status === "error") {
-        throw new Error("Transaction failed")
+        console.error("Claim error:", finalPayload)
+        throw new Error(finalPayload.error_code || "Transaction failed")
       }
 
       // Refresh data after successful transaction
-      setTimeout(() => fetchStakingData(), 5000)
+      setTimeout(() => fetchStakingData(), 3000)
 
       return finalPayload.transaction_id
     } catch (error: any) {
