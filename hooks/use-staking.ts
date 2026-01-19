@@ -135,35 +135,37 @@ export function useStaking() {
       const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
-      // We MUST send both as a single transaction array to avoid simulation errors
-      // if we send them separately, the second transaction (stake) fails simulation 
-      // because the first (approve) hasn't been mined yet.
-      const transactions = [
-        {
-          address: tokenAddress,
-          abi: erc20Abi,
-          functionName: "approve",
-          args: [stakingAddress, amount.toString()],
-        },
-        {
-          address: stakingAddress,
-          abi: stakingAbi,
-          functionName: "stake",
-          args: [amount.toString()],
-        }
-      ];
+      // Use MiniKit.commands.sendTransaction (not commandsAsync) to trigger the World App native prompt
+      // Batching approve and stake to show correct "Send/Receive" in World App
+      const payload = {
+        transaction: [
+          {
+            address: tokenAddress,
+            abi: erc20Abi,
+            functionName: "approve",
+            args: [stakingAddress, amount.toString()],
+          },
+          {
+            address: stakingAddress,
+            abi: stakingAbi,
+            functionName: "stake",
+            args: [amount.toString()],
+          }
+        ],
+      };
 
-      console.log("Requesting transaction batch signature...")
-      const res = await MiniKit.commandsAsync.sendTransaction({
-        transaction: transactions,
-      })
-
-      if (res.finalPayload.status === "error") {
-        throw new Error(res.finalPayload.error_code || "Transaction failed or rejected")
-      }
-
-      await fetchStakingData()
-      return res.finalPayload.transaction_id
+      console.log("Sending transaction payload to World App...");
+      const response = await MiniKit.commands.sendTransaction(payload);
+      
+      // Note: The response from sendTransaction is immediate, transaction tracking 
+      // is handled via the onCommandResponse listener in the provider
+      console.log("Transaction request sent:", response);
+      
+      // Since we can't easily wait for the callback here, we return the response
+      // and refresh data after a delay
+      setTimeout(() => fetchStakingData(), 5000)
+      
+      return response?.transaction_id
     } catch (error: any) {
       console.error("Error staking:", error)
       throw error
@@ -180,7 +182,7 @@ export function useStaking() {
     try {
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
-      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+      const payload = {
         transaction: [
           {
             address: stakingAddress,
@@ -189,14 +191,11 @@ export function useStaking() {
             args: [amount.toString()],
           },
         ],
-      })
+      };
 
-      if (finalPayload.status === "error") {
-        throw new Error(finalPayload.error_code || "Transaction failed")
-      }
-
-      await fetchStakingData()
-      return finalPayload.transaction_id
+      const response = await MiniKit.commands.sendTransaction(payload);
+      setTimeout(() => fetchStakingData(), 5000)
+      return response?.transaction_id
     } catch (error: any) {
       console.error("Error unstaking:", error)
       throw error
@@ -213,7 +212,7 @@ export function useStaking() {
     try {
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
-      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+      const payload = {
         transaction: [
           {
             address: stakingAddress,
@@ -222,14 +221,11 @@ export function useStaking() {
             args: [],
           },
         ],
-      })
+      };
 
-      if (finalPayload.status === "error") {
-        throw new Error(finalPayload.error_code || "Transaction failed")
-      }
-
-      await fetchStakingData()
-      return finalPayload.transaction_id
+      const response = await MiniKit.commands.sendTransaction(payload);
+      setTimeout(() => fetchStakingData(), 5000)
+      return response?.transaction_id
     } catch (error: any) {
       console.error("Error claiming rewards:", error)
       throw error
