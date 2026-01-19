@@ -126,15 +126,15 @@ export function useStaking() {
 
   const stake = async (amount: bigint) => {
     if (!data.address) throw new Error("Wallet not connected")
+    if (!MiniKit.isInstalled()) throw new Error("MiniKit not installed")
 
     setLoading(true)
     try {
-      console.log("Preparing stake transaction for amount:", amount)
+      console.log("Preparing stake transaction for amount:", amount.toString())
 
       const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
-      // 1. Force approval for the specific amount to ensure World App "Permitir" flow
       const transactions = [
         {
           address: tokenAddress,
@@ -150,18 +150,17 @@ export function useStaking() {
         }
       ];
 
-      console.log("Sending transactions batch:", transactions);
-
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: transactions,
       })
 
       if (finalPayload.status === "error") {
-        console.error("Transaction payload error:", finalPayload)
-        throw new Error(finalPayload.error_code || "Transaction failed")
+        const errorMsg = finalPayload.error_code || "Transaction rejected or failed";
+        console.error("Stake error:", finalPayload)
+        throw new Error(errorMsg)
       }
 
-      setTimeout(() => fetchStakingData(), 3000)
+      await fetchStakingData()
       return finalPayload.transaction_id
     } catch (error: any) {
       console.error("Error staking:", error)
@@ -173,11 +172,10 @@ export function useStaking() {
 
   const unstake = async (amount: bigint) => {
     if (!data.address) throw new Error("Wallet not connected")
+    if (!MiniKit.isInstalled()) throw new Error("MiniKit not installed")
 
     setLoading(true)
     try {
-      console.log("Preparing unstake transaction for amount:", amount)
-      
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
@@ -186,19 +184,16 @@ export function useStaking() {
             address: stakingAddress,
             abi: stakingAbi,
             functionName: "unstake",
-            args: [amount.toString()], // Convert bigint to string
+            args: [amount.toString()],
           },
         ],
       })
 
       if (finalPayload.status === "error") {
-        console.error("Unstake error:", finalPayload)
         throw new Error(finalPayload.error_code || "Transaction failed")
       }
 
-      // Refresh data after successful transaction
-      setTimeout(() => fetchStakingData(), 3000)
-
+      await fetchStakingData()
       return finalPayload.transaction_id
     } catch (error: any) {
       console.error("Error unstaking:", error)
@@ -210,11 +205,10 @@ export function useStaking() {
 
   const claim = async () => {
     if (!data.address) throw new Error("Wallet not connected")
+    if (!MiniKit.isInstalled()) throw new Error("MiniKit not installed")
 
     setLoading(true)
     try {
-      console.log("Preparing claim transaction")
-      
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
@@ -229,13 +223,10 @@ export function useStaking() {
       })
 
       if (finalPayload.status === "error") {
-        console.error("Claim error:", finalPayload)
         throw new Error(finalPayload.error_code || "Transaction failed")
       }
 
-      // Refresh data after successful transaction
-      setTimeout(() => fetchStakingData(), 3000)
-
+      await fetchStakingData()
       return finalPayload.transaction_id
     } catch (error: any) {
       console.error("Error claiming rewards:", error)
