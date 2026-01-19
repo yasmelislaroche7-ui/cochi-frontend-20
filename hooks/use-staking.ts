@@ -131,26 +131,42 @@ export function useStaking() {
     try {
       console.log("Preparing stake transaction for amount:", amount)
 
-      // Ensure addresses are properly formatted as hex strings
       const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
-      // Use a single command to ensure the modal pops up correctly
+      // 1. First, check current allowance
+      const allowance = await publicClient.readContract({
+        address: tokenAddress,
+        abi: erc20Abi,
+        functionName: "allowance",
+        args: [data.address as `0x${string}`, stakingAddress],
+      }) as bigint;
+
+      const transactions = [];
+
+      // 2. If allowance is less than amount, add approve transaction
+      if (allowance < amount) {
+        console.log("Adding approve transaction, current allowance:", allowance);
+        transactions.push({
+          address: tokenAddress,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [stakingAddress, amount.toString()],
+        });
+      }
+
+      // 3. Add stake transaction
+      transactions.push({
+        address: stakingAddress,
+        abi: stakingAbi,
+        functionName: "stake",
+        args: [amount.toString()],
+      });
+
+      console.log("Sending transactions batch:", transactions);
+
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [
-          {
-            address: tokenAddress,
-            abi: erc20Abi,
-            functionName: "approve",
-            args: [stakingAddress, amount.toString()], // Convert bigint to string for safety in JSON payload
-          },
-          {
-            address: stakingAddress,
-            abi: stakingAbi,
-            functionName: "stake",
-            args: [amount.toString()], // Convert bigint to string for safety in JSON payload
-          },
-        ],
+        transaction: transactions,
       })
 
       if (finalPayload.status === "error") {
@@ -158,9 +174,7 @@ export function useStaking() {
         throw new Error(finalPayload.error_code || "Transaction failed")
       }
 
-      // Refresh data after successful transaction
       setTimeout(() => fetchStakingData(), 3000)
-
       return finalPayload.transaction_id
     } catch (error: any) {
       console.error("Error staking:", error)
