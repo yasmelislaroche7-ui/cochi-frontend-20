@@ -129,30 +129,16 @@ export function useStaking() {
 
     setLoading(true)
     try {
-      // Check allowance with a slightly more robust error handling
-      let allowance = 0n;
-      try {
-        allowance = (await publicClient.readContract({
-          address: TOKEN_CONTRACT_ADDRESS as `0x${string}`,
-          abi: erc20Abi,
-          functionName: "allowance",
-          args: [data.address as `0x${string}`, STAKING_CONTRACT_ADDRESS as `0x${string}`],
-        })) as bigint
-      } catch (e) {
-        console.warn("Could not fetch allowance, assuming 0", e);
-      }
-
       const transactions = []
 
-      // Approve if needed
-      if (allowance < amount) {
-        transactions.push({
-          address: TOKEN_CONTRACT_ADDRESS as `0x${string}`,
-          abi: erc20Abi,
-          functionName: "approve",
-          args: [STAKING_CONTRACT_ADDRESS, amount],
-        })
-      }
+      // Always include approve to ensure balance is recognized by World App/Contract
+      // This matches the "Permitir transacción" flow in the example
+      transactions.push({
+        address: TOKEN_CONTRACT_ADDRESS as `0x${string}`,
+        abi: erc20Abi,
+        functionName: "approve",
+        args: [STAKING_CONTRACT_ADDRESS, amount],
+      })
 
       // Stake
       transactions.push({
