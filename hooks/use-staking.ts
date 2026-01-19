@@ -131,20 +131,24 @@ export function useStaking() {
     try {
       console.log("Preparing stake transaction for amount:", amount)
 
+      // Ensure addresses are properly formatted as hex strings
+      const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
+      const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
+
       // Use a single command to ensure the modal pops up correctly
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
-            address: TOKEN_CONTRACT_ADDRESS as `0x${string}`,
+            address: tokenAddress,
             abi: erc20Abi,
             functionName: "approve",
-            args: [STAKING_CONTRACT_ADDRESS, amount],
+            args: [stakingAddress, amount.toString()], // Convert bigint to string for safety in JSON payload
           },
           {
-            address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
+            address: stakingAddress,
             abi: stakingAbi,
             functionName: "stake",
-            args: [amount],
+            args: [amount.toString()], // Convert bigint to string for safety in JSON payload
           },
         ],
       })
@@ -173,13 +177,15 @@ export function useStaking() {
     try {
       console.log("Preparing unstake transaction for amount:", amount)
       
+      const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
+
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
-            address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
+            address: stakingAddress,
             abi: stakingAbi,
             functionName: "unstake",
-            args: [amount],
+            args: [amount.toString()], // Convert bigint to string
           },
         ],
       })
@@ -208,10 +214,12 @@ export function useStaking() {
     try {
       console.log("Preparing claim transaction")
       
+      const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
+
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
-            address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
+            address: stakingAddress,
             abi: stakingAbi,
             functionName: "claim",
             args: [],
