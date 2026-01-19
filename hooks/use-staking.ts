@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from "react"
-import { createPublicClient, http } from "viem"
-import { worldchain } from "viem/chains"
-import { MiniKit } from "@worldcoin/minikit-js"
-import stakingAbi from "@/lib/contracts/staking-abi.json"
-import erc20Abi from "@/lib/contracts/erc20-abi.json"
-import { STAKING_CONTRACT_ADDRESS, TOKEN_CONTRACT_ADDRESS } from "@/lib/contracts/config"
+import { useState, useEffect, useCallback } from "react";
+import { createPublicClient, http } from "viem";
+import { worldchain } from "viem/chains";
+import { MiniKit } from "@worldcoin/minikit-js";
+import stakingAbi from "@/lib/contracts/staking-abi.json";
+import erc20Abi from "@/lib/contracts/erc20-abi.json";
+import { STAKING_CONTRACT_ADDRESS, TOKEN_CONTRACT_ADDRESS } from "@/lib/contracts/config";
 
 export interface StakingData {
-  stakedBalance: bigint
-  availableBalance: bigint
-  pendingRewards: bigint
-  unlockTime: bigint
-  apr: bigint
-  isUnlocked: boolean
-  isConnected: boolean
-  address: string | null
+  stakedBalance: bigint;
+  availableBalance: bigint;
+  pendingRewards: bigint;
+  unlockTime: bigint;
+  apr: bigint;
+  isUnlocked: boolean;
+  isConnected: boolean;
+  address: string | null;
 }
 
 export function useStaking() {
@@ -29,8 +29,8 @@ export function useStaking() {
     isUnlocked: true,
     isConnected: false,
     address: null,
-  })
-  const [loading, setLoading] = useState(false)
+  });
+  const [loading, setLoading] = useState(false);
 
   const publicClient = createPublicClient({
     chain: worldchain,
@@ -38,10 +38,10 @@ export function useStaking() {
     batch: {
       multicall: true,
     },
-  })
+  });
 
   const connectWallet = useCallback(async () => {
-    console.log("Attempting to connect wallet...")
+    console.log("Attempting to connect wallet...");
     if (typeof window === "undefined") return null;
     
     try {
@@ -51,49 +51,46 @@ export function useStaking() {
         expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         notBefore: new Date(),
         statement: "Connect to Matrix Stake",
-      })
+      });
 
       if (res.finalPayload.status === "error") {
-        throw new Error(res.finalPayload.error_code || "Wallet connection failed")
+        throw new Error(res.finalPayload.error_code || "Wallet connection failed");
       }
 
-      // Safe access to address for latest MiniKit types
       const payload = res.finalPayload as any;
       const address = payload.address || (MiniKit as any).walletAddress;
-      console.log("Connected address:", address)
+      console.log("Connected address:", address);
 
       if (!address) {
-        throw new Error("Connection successful but no address found")
+        throw new Error("Connection successful but no address found");
       }
 
       setData((prev) => ({
         ...prev,
         isConnected: true,
         address: address,
-      }))
+      }));
 
-      return address
+      return address;
     } catch (error: any) {
-      console.error("Error connecting wallet:", error)
-      // Fallback check
+      console.error("Error connecting wallet:", error);
       if ((MiniKit as any).walletAddress) {
         setData((prev) => ({
           ...prev,
           isConnected: true,
           address: (MiniKit as any).walletAddress,
-        }))
-        return (MiniKit as any).walletAddress
+        }));
+        return (MiniKit as any).walletAddress;
       }
-      throw error
+      throw error;
     }
-  }, [])
+  }, []);
 
-  // Fetch user staking data
   const fetchStakingData = useCallback(async () => {
-    if (!data.address) return
+    if (!data.address) return;
 
     try {
-      console.log("Fetching staking data for:", data.address)
+      console.log("Fetching staking data for:", data.address);
       const [userInfo, apr, tokenBalance] = await Promise.all([
         publicClient.readContract({
           address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
@@ -112,11 +109,11 @@ export function useStaking() {
           functionName: "balanceOf",
           args: [data.address as `0x${string}`],
         }) as Promise<bigint>,
-      ])
+      ]);
 
-      const [staked, pending, unlockTime] = userInfo || [0n, 0n, 0n]
-      const currentTime = BigInt(Math.floor(Date.now() / 1000))
-      const isUnlocked = currentTime >= (unlockTime || 0n)
+      const [staked, pending, unlockTime] = userInfo || [0n, 0n, 0n];
+      const currentTime = BigInt(Math.floor(Date.now() / 1000));
+      const isUnlocked = currentTime >= (unlockTime || 0n);
 
       setData((prev) => ({
         ...prev,
@@ -124,60 +121,102 @@ export function useStaking() {
         pendingRewards: pending || 0n,
         unlockTime: unlockTime || 0n,
         availableBalance: tokenBalance || 0n,
-        apr: (apr && apr > 0n) ? apr : 500n, 
+        apr: (apr && apr > 0n) ? apr : 500n,
         isUnlocked,
-      }))
+      }));
     } catch (error: any) {
-      console.error("Error fetching staking data:", error)
+      console.error("Error fetching staking data:", error);
     }
-  }, [data.address, publicClient])
+  }, [data.address, publicClient]);
 
   const stake = async (amount: bigint) => {
-    if (!data.address) throw new Error("Wallet not connected")
+    if (!data.address) throw new Error("Wallet not connected");
 
-    setLoading(true)
+    setLoading(true);
     try {
-      console.log("Preparing stake transaction for amount:", amount.toString())
+      console.log("Preparing stake transaction for amount:", amount.toString());
 
       const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
-      // Using batch to ensure simulation success and prompt display
-      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+      // 1) Check current allowance
+      console.log("Checking allowance...");
+      const allowance = await publicClient.readContract({
+        address: tokenAddress,
+        abi: erc20Abi,
+        functionName: "allowance",
+        args: [data.address as `0x${string}`, stakingAddress],
+      }) as Promise<bigint>;
+
+      console.log("Current allowance:", allowance.toString());
+
+      if (allowance < amount) {
+        console.log("Allowance insufficient, sending approve...");
+        const approveResult = await MiniKit.commandsAsync.sendTransaction({
+          transaction: [
+            {
+              address: tokenAddress,
+              abi: erc20Abi,
+              functionName: "approve",
+              args: [stakingAddress, amount.toString()],
+            },
+          ],
+        });
+
+        console.log("Approve finalPayload:", approveResult.finalPayload);
+
+        if (approveResult.finalPayload.status === "error") {
+          throw new Error(approveResult.finalPayload.error_code || "Approval failed");
+        }
+
+        // Re-check allowance to be safe
+        const newAllowance = await publicClient.readContract({
+          address: tokenAddress,
+          abi: erc20Abi,
+          functionName: "allowance",
+          args: [data.address as `0x${string}`, stakingAddress],
+        }) as Promise<bigint>;
+
+        console.log("Allowance after approve:", newAllowance.toString());
+
+        if (newAllowance < amount) {
+          throw new Error("Allowance did not update to required amount after approve");
+        }
+      } else {
+        console.log("Sufficient allowance detected, skipping approve.");
+      }
+
+      // 2) Now call stake in a separate transaction
+      const stakeResult = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
-          {
-            address: tokenAddress,
-            abi: erc20Abi,
-            functionName: "approve",
-            args: [stakingAddress, amount.toString()],
-          },
           {
             address: stakingAddress,
             abi: stakingAbi,
             functionName: "stake",
             args: [amount.toString()],
-          }
+          },
         ],
-      })
+      });
 
-      if (finalPayload.status === "error") {
-        throw new Error(finalPayload.error_code || "Transaction failed")
+      console.log("Stake finalPayload:", stakeResult.finalPayload);
+      if (stakeResult.finalPayload.status === "error") {
+        throw new Error(stakeResult.finalPayload.error_code || "Stake transaction failed");
       }
 
-      await fetchStakingData()
-      return finalPayload.transaction_id
+      await fetchStakingData();
+      return stakeResult.finalPayload.transaction_id;
     } catch (error: any) {
-      console.error("Error staking:", error)
-      throw error
+      console.error("Error staking:", error);
+      throw error;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const unstake = async (amount: bigint) => {
-    if (!data.address) throw new Error("Wallet not connected")
+    if (!data.address) throw new Error("Wallet not connected");
 
-    setLoading(true)
+    setLoading(true);
     try {
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
@@ -190,26 +229,26 @@ export function useStaking() {
             args: [amount.toString()],
           },
         ],
-      })
+      });
 
       if (finalPayload.status === "error") {
-        throw new Error(finalPayload.error_code || "Transaction failed")
+        throw new Error(finalPayload.error_code || "Transaction failed");
       }
 
-      await fetchStakingData()
-      return finalPayload.transaction_id
+      await fetchStakingData();
+      return finalPayload.transaction_id;
     } catch (error: any) {
-      console.error("Error unstaking:", error)
-      throw error
+      console.error("Error unstaking:", error);
+      throw error;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const claim = async () => {
-    if (!data.address) throw new Error("Wallet not connected")
+    if (!data.address) throw new Error("Wallet not connected");
 
-    setLoading(true)
+    setLoading(true);
     try {
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
@@ -222,45 +261,42 @@ export function useStaking() {
             args: [],
           },
         ],
-      })
+      });
 
       if (finalPayload.status === "error") {
-        throw new Error(finalPayload.error_code || "Transaction failed")
+        throw new Error(finalPayload.error_code || "Transaction failed");
       }
 
-      await fetchStakingData()
-      return finalPayload.transaction_id
+      await fetchStakingData();
+      return finalPayload.transaction_id;
     } catch (error: any) {
-      console.error("Error claiming rewards:", error)
-      throw error
+      console.error("Error claiming rewards:", error);
+      throw error;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  // Auto-refresh data every 10 seconds
   useEffect(() => {
     if (data.isConnected) {
-      fetchStakingData()
-      const interval = setInterval(fetchStakingData, 10000)
-      return () => clearInterval(interval)
+      fetchStakingData();
+      const interval = setInterval(fetchStakingData, 10000);
+      return () => clearInterval(interval);
     }
-  }, [data.isConnected, fetchStakingData])
+  }, [data.isConnected, fetchStakingData]);
 
   useEffect(() => {
     const checkWallet = async () => {
       if (MiniKit.isInstalled() && !data.isConnected) {
         try {
-          // If walletAddress is already there, use it immediately
           if ((MiniKit as any).walletAddress) {
             setData((prev) => ({
               ...prev,
               isConnected: true,
               address: (MiniKit as any).walletAddress,
-            }))
+            }));
             return;
           }
-          // Otherwise try auth
           await connectWallet();
         } catch (e) {
           console.error("Initial connection failed", e);
@@ -268,7 +304,7 @@ export function useStaking() {
       }
     };
     checkWallet();
-  }, [connectWallet, data.isConnected])
+  }, [connectWallet, data.isConnected]);
 
   return {
     ...data,
@@ -278,5 +314,5 @@ export function useStaking() {
     unstake,
     claim,
     refreshData: fetchStakingData,
-  }
+  };
 }
