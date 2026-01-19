@@ -98,7 +98,7 @@ export function StakeForm({ availableBalance, onStake, loading }: StakeFormProps
       </div>
 
       <Button type="submit" size="sm" className="w-full bg-matrix-green text-black hover:bg-matrix-green/90 font-mono h-9 shadow-[0_0_10px_rgba(0,255,0,0.3)]" disabled={loading}>
-        {loading ? "EXECUTING..." : "CONFIRM_STAKE"}
+        {loading ? "PROCESSING..." : "CONFIRM_STAKE"}
       </Button>
     </form>
   )

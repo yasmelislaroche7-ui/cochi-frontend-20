@@ -109,7 +109,7 @@ export function UnstakeForm({ stakedBalance, onUnstake, loading, isUnlocked }: U
       </div>
 
       <Button type="submit" size="sm" variant="secondary" className="w-full bg-matrix-cyan/20 text-matrix-cyan border border-matrix-cyan/50 hover:bg-matrix-cyan/30 font-mono h-9" disabled={loading}>
-        {loading ? "EXECUTING..." : "CONFIRM_UNSTAKE"}
+        {loading ? "PROCESSING..." : "CONFIRM_UNSTAKE"}
       </Button>
     </form>
   )
