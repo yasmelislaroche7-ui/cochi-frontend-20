@@ -135,33 +135,42 @@ export function useStaking() {
       const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
-      const transactions = [
-        {
-          address: tokenAddress,
-          abi: erc20Abi,
-          functionName: "approve",
-          args: [stakingAddress, amount.toString()],
-        },
-        {
-          address: stakingAddress,
-          abi: stakingAbi,
-          functionName: "stake",
-          args: [amount.toString()],
-        }
-      ];
-
-      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: transactions,
+      // 1. Send Approve transaction
+      console.log("Requesting approval signature...")
+      const approveRes = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [
+          {
+            address: tokenAddress,
+            abi: erc20Abi,
+            functionName: "approve",
+            args: [stakingAddress, amount.toString()],
+          }
+        ],
       })
 
-      if (finalPayload.status === "error") {
-        const errorMsg = finalPayload.error_code || "Transaction rejected or failed";
-        console.error("Stake error:", finalPayload)
-        throw new Error(errorMsg)
+      if (approveRes.finalPayload.status === "error") {
+        throw new Error(approveRes.finalPayload.error_code || "Approval failed or rejected")
+      }
+
+      // 2. Send Stake transaction after approval is signed
+      console.log("Requesting stake signature...")
+      const stakeRes = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [
+          {
+            address: stakingAddress,
+            abi: stakingAbi,
+            functionName: "stake",
+            args: [amount.toString()],
+          }
+        ],
+      })
+
+      if (stakeRes.finalPayload.status === "error") {
+        throw new Error(stakeRes.finalPayload.error_code || "Stake failed or rejected")
       }
 
       await fetchStakingData()
-      return finalPayload.transaction_id
+      return stakeRes.finalPayload.transaction_id
     } catch (error: any) {
       console.error("Error staking:", error)
       throw error

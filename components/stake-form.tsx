@@ -43,8 +43,8 @@ export function StakeForm({ availableBalance, onStake, loading }: StakeFormProps
       await onStake(numAmount)
       setAmount("")
       toast({
-        title: "Stake initialized",
-        description: `Processing ${numAmount.toFixed(2)} WORLD stake. Please wait for confirmation.`,
+        title: "ENVIADO",
+        description: `Stake de ${numAmount.toFixed(2)} MTXs realizado con éxito.`,
       })
     } catch (error: any) {
       toast({
@@ -98,7 +98,7 @@ export function StakeForm({ availableBalance, onStake, loading }: StakeFormProps
       </div>
 
       <Button type="submit" size="sm" className="w-full bg-matrix-green text-black hover:bg-matrix-green/90 font-mono h-9 shadow-[0_0_10px_rgba(0,255,0,0.3)]" disabled={loading}>
-        {loading ? "PROCESSING..." : "CONFIRM_STAKE"}
+        {loading ? "FIRMANDO..." : "CONFIRM_STAKE"}
       </Button>
     </form>
   )
