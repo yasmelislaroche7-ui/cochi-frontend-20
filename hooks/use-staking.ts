@@ -45,8 +45,6 @@ export function useStaking() {
     if (typeof window === "undefined") return null;
     
     try {
-      // Direct access to MiniKit is usually reliable if it's already installed
-      // Re-triggering walletAuth can help refresh the connection
       const res = await MiniKit.commandsAsync.walletAuth({
         nonce: crypto.randomUUID(),
         requestId: "0",
@@ -55,7 +53,13 @@ export function useStaking() {
         statement: "Connect to Matrix Stake",
       })
 
-      const address = MiniKit.walletAddress || res.finalPayload.address
+      if (res.finalPayload.status === "error") {
+        throw new Error(res.finalPayload.error_code || "Wallet connection failed")
+      }
+
+      // Safe access to address for latest MiniKit types
+      const payload = res.finalPayload as any;
+      const address = payload.address || (MiniKit as any).walletAddress;
       console.log("Connected address:", address)
 
       if (!address) {
@@ -71,14 +75,14 @@ export function useStaking() {
       return address
     } catch (error: any) {
       console.error("Error connecting wallet:", error)
-      // Fallback if miniKit is already initialized
-      if (MiniKit.walletAddress) {
+      // Fallback check
+      if ((MiniKit as any).walletAddress) {
         setData((prev) => ({
           ...prev,
           isConnected: true,
-          address: MiniKit.walletAddress,
+          address: (MiniKit as any).walletAddress,
         }))
-        return MiniKit.walletAddress
+        return (MiniKit as any).walletAddress
       }
       throw error
     }
@@ -138,7 +142,6 @@ export function useStaking() {
       const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
-      // Reverting to commandsAsync for better error handling and wait-ability
       // Using batch to ensure simulation success and prompt display
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
@@ -245,9 +248,26 @@ export function useStaking() {
   }, [data.isConnected, fetchStakingData])
 
   useEffect(() => {
-    if (MiniKit.isInstalled() && MiniKit.walletAddress && !data.isConnected) {
-      connectWallet()
-    }
+    const checkWallet = async () => {
+      if (MiniKit.isInstalled() && !data.isConnected) {
+        try {
+          // If walletAddress is already there, use it immediately
+          if ((MiniKit as any).walletAddress) {
+            setData((prev) => ({
+              ...prev,
+              isConnected: true,
+              address: (MiniKit as any).walletAddress,
+            }))
+            return;
+          }
+          // Otherwise try auth
+          await connectWallet();
+        } catch (e) {
+          console.error("Initial connection failed", e);
+        }
+      }
+    };
+    checkWallet();
   }, [connectWallet, data.isConnected])
 
   return {
