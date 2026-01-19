@@ -1,17 +1,17 @@
-"use client";
+"use client"
 
-import { useState, useEffect, useCallback } from "react";
-import { createPublicClient, http, formatUnits } from "viem";
-import { worldchain } from "viem/chains";
-import { MiniKit } from "@worldcoin/minikit-js";
-import stakingAbi from "@/lib/contracts/staking-abi.json";
-import erc20Abi from "@/lib/contracts/erc20-abi.json";
+import { useState, useEffect, useCallback } from "react"
+import { createPublicClient, http, formatUnits } from "viem"
+import { worldchain } from "viem/chains"
+import { MiniKit } from "@worldcoin/minikit-js"
+import stakingAbi from "@/lib/contracts/staking-abi.json"
+import erc20Abi from "@/lib/contracts/erc20-abi.json"
 import {
   STAKING_CONTRACT_ADDRESS,
   TOKEN_CONTRACT_ADDRESS,
   TOKEN_SYMBOL,
   TOKEN_DECIMALS,
-} from "@/lib/contracts/config";
+} from "@/lib/contracts/config"
 
 export interface StakingData {
   stakedBalance: bigint;
@@ -46,7 +46,7 @@ export function useStaking() {
   });
 
   const connectWallet = useCallback(async () => {
-    console.log("Attempting to connect wallet...");
+    console.log("Attempting to connect wallet...")
     if (typeof window === "undefined") return null;
     
     try {
@@ -59,16 +59,16 @@ export function useStaking() {
       });
 
       if (res.finalPayload.status === "error") {
-        throw new Error(res.finalPayload.error_code || "Wallet connection failed");
+        throw new Error(res.finalPayload.error_code || "Wallet connection failed")
       }
 
       // Safe access to address for latest MiniKit types
       const payload = res.finalPayload as any;
       const address = payload.address || (MiniKit as any).walletAddress;
-      console.log("Connected address:", address);
+      console.log("Connected address:", address)
 
       if (!address) {
-        throw new Error("Connection successful but no address found");
+        throw new Error("Connection successful but no address found")
       }
 
       setData((prev) => ({
@@ -79,7 +79,7 @@ export function useStaking() {
 
       return address;
     } catch (error: any) {
-      console.error("Error connecting wallet:", error);
+      console.error("Error connecting wallet:", error)
       // Fallback check
       if ((MiniKit as any).walletAddress) {
         setData((prev) => ({
@@ -201,12 +201,12 @@ export function useStaking() {
 
       // 1) Check current allowance
       console.log("Checking allowance...");
-      const allowance = await publicClient.readContract({
+      const allowance = (await publicClient.readContract({
         address: tokenAddress,
         abi: erc20Abi,
         functionName: "allowance",
         args: [data.address as `0x${string}`, stakingAddress],
-      }) as Promise<bigint>;
+      })) as bigint;
 
       console.log("Current allowance:", allowance.toString());
 
@@ -232,12 +232,12 @@ export function useStaking() {
         }
 
         // Re-check allowance to be safe
-        const newAllowance = await publicClient.readContract({
+        const newAllowance = (await publicClient.readContract({
           address: tokenAddress,
           abi: erc20Abi,
           functionName: "allowance",
           args: [data.address as `0x${string}`, stakingAddress],
-        }) as Promise<bigint>;
+        })) as bigint;
 
         console.log("Allowance after approve:", newAllowance.toString());
 
@@ -319,12 +319,12 @@ export function useStaking() {
       // Optional: read pending rewards to include in pre-sign message
       let pending: bigint | undefined = undefined;
       try {
-        pending = await publicClient.readContract({
+        pending = (await publicClient.readContract({
           address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
           abi: stakingAbi,
           functionName: "pendingRewards",
           args: [data.address as `0x${string}`],
-        }) as Promise<bigint>;
+        })) as bigint;
       } catch (e) {
         console.warn("Could not read pending rewards for pre-sign:", e);
       }
