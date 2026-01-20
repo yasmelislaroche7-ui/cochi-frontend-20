@@ -145,21 +145,48 @@ export function useStaking() {
 
     setLoading(true);
     try {
-      console.log("Preparing stake transaction for amount:", amount.toString());
+      console.log("Preparing stake sequence for amount:", amount.toString());
 
       const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
-      // We use commandsAsync.sendTransaction to bundle approve + stake together.
-      // This is the cleanest way to ensure simulation success in World App.
+      // 1. Check current allowance
+      const allowance = (await publicClient.readContract({
+        address: tokenAddress,
+        abi: erc20Abi,
+        functionName: "allowance",
+        args: [data.address as `0x${string}`, stakingAddress],
+      })) as bigint;
+
+      console.log("Current allowance:", allowance.toString());
+
+      // 2. If allowance is insufficient, perform UNLIMITED APPROVE as a separate action
+      if (allowance < amount) {
+        console.log("Allowance insufficient, requesting UNLIMITED APPROVAL...");
+        const approveResult = await MiniKit.commandsAsync.sendTransaction({
+          transaction: [
+            {
+              address: tokenAddress,
+              abi: erc20Abi,
+              functionName: "approve",
+              args: [stakingAddress, MAX_UINT256.toString()],
+            },
+          ],
+        });
+
+        if (approveResult.finalPayload.status === "error") {
+          throw new Error(approveResult.finalPayload.error_code || "Approval failed");
+        }
+        
+        console.log("Approval successful, waiting for chain synchronization...");
+        // Short wait to ensure public RPC reflects the change before stake simulation
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+
+      // 3. Perform STAKE as a separate action to ensure World App simulation success
+      console.log("Sending stake transaction...");
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
-          {
-            address: tokenAddress,
-            abi: erc20Abi,
-            functionName: "approve",
-            args: [stakingAddress, amount.toString()],
-          },
           {
             address: stakingAddress,
             abi: stakingAbi,
@@ -170,13 +197,13 @@ export function useStaking() {
       });
 
       if (finalPayload.status === "error") {
-        throw new Error(finalPayload.error_code || "Transaction failed");
+        throw new Error(finalPayload.error_code || "Stake transaction failed");
       }
 
       await fetchStakingData();
       return finalPayload.transaction_id;
     } catch (error: any) {
-      console.error("Error staking:", error);
+      console.error("Error in staking flow:", error);
       throw error;
     } finally {
       setLoading(false);
