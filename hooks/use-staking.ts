@@ -150,20 +150,40 @@ export function useStaking() {
       const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
-      // En World App, disallowed_operation a menudo se refiere a problemas de simulación
-      // o a que el usuario canceló una transacción previa.
-      // Vamos a intentar simplificar al máximo enviando solo el comando de transacción
-      // directamente, asegurándonos de que los argumentos sean strings.
+      // En World App, disallowed_operation a menudo se refiere a problemas de simulación.
+      // Primero realizamos el Approve si es necesario para asegurar la simulación del Stake.
+      
+      const allowance = (await publicClient.readContract({
+        address: tokenAddress,
+        abi: erc20Abi,
+        functionName: "allowance",
+        args: [data.address as `0x${string}`, stakingAddress],
+      })) as bigint;
 
-      console.log("Sending batched approve and stake transaction...");
+      if (allowance < amount) {
+        console.log("Requesting approval...");
+        const approveRes = await MiniKit.commandsAsync.sendTransaction({
+          transaction: [
+            {
+              address: tokenAddress,
+              abi: erc20Abi,
+              functionName: "approve",
+              args: [stakingAddress, MAX_UINT256.toString()],
+            }
+          ],
+        });
+        
+        if (approveRes.finalPayload.status === "error") {
+          throw new Error(approveRes.finalPayload.error_code || "Approval failed");
+        }
+        
+        // Espera de sincronización
+        await new Promise(r => setTimeout(r, 2000));
+      }
+
+      console.log("Sending stake transaction...");
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
-          {
-            address: tokenAddress,
-            abi: erc20Abi,
-            functionName: "approve",
-            args: [stakingAddress, amount.toString()],
-          },
           {
             address: stakingAddress,
             abi: stakingAbi,
