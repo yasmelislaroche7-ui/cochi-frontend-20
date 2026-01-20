@@ -150,9 +150,8 @@ export function useStaking() {
       const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
-      // Show amounts clearly in the prompt by using string arguments
-      const readableAmount = formatUnits(amount, Number(TOKEN_DECIMALS));
-      
+      // Since 'claim' works, we mirror its structure by sending the transaction directly.
+      // We combine approve and stake into one single call to MiniKit.
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
