@@ -96,51 +96,6 @@ export function useStaking() {
   // Helper: MAX_UINT256
   const MAX_UINT256 = (1n << 256n) - 1n;
 
-  // Helper: Try to prompt World App signature/message with readable amounts; fallback to window.confirm
-  const preSignPrompt = async (action: "approve" | "stake" | "claim", sendAmount?: bigint, receiveAmount?: bigint) => {
-    try {
-      const sendReadable = sendAmount !== undefined ? formatUnits(sendAmount, Number(TOKEN_DECIMALS)) : undefined;
-      const receiveReadable = receiveAmount !== undefined ? formatUnits(receiveAmount, Number(TOKEN_DECIMALS)) : undefined;
-
-      let message = "";
-      if (action === "approve") {
-        message = `Approve unlimited ${TOKEN_SYMBOL} for staking contract (${STAKING_CONTRACT_ADDRESS}). This is a one-time approval so you won't need to approve every stake.`;
-        if (sendReadable) message += `\nAmount intended to stake now: ${sendReadable} ${TOKEN_SYMBOL}`;
-      } else if (action === "stake") {
-        message = `You are about to STAKE ${sendReadable} ${TOKEN_SYMBOL} to contract ${STAKING_CONTRACT_ADDRESS}.`;
-      } else if (action === "claim") {
-        message = `You are about to CLAIM your pending rewards.`;
-        if (receiveReadable) message += `\nEstimated claim amount: ${receiveReadable} ${TOKEN_SYMBOL}`;
-      }
-
-      // Try World App MiniKit signature prompt if available to surface message in the World App signer UI
-      const signerApi = (MiniKit as any).commandsAsync;
-      if (signerApi && typeof signerApi.signMessage === "function") {
-        try {
-          console.log("Attempting to use MiniKit signMessage for pre-sign prompt");
-          const res = await signerApi.signMessage({ message });
-          if (res?.finalPayload?.status === "error") {
-            console.warn("signMessage returned error payload:", res.finalPayload);
-            // fallback to confirm
-            return window.confirm(message + "\n\nConfirm?");
-          }
-          // assume user approved
-          return true;
-        } catch (e) {
-          console.warn("MiniKit signMessage failed or not supported:", e);
-          // fallback to confirm
-          return window.confirm(message + "\n\nConfirm?");
-        }
-      }
-
-      // Fallback UI: native confirm
-      return window.confirm(message + "\n\nConfirm?");
-    } catch (e) {
-      console.error("preSignPrompt error:", e);
-      return window.confirm("Confirm transaction?");
-    }
-  };
-
   // Fetch user staking data
   const fetchStakingData = useCallback(async () => {
     if (!data.address) return;
@@ -195,13 +150,8 @@ export function useStaking() {
       const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
-      // Pre-sign/confirm approve+stake with message showing amounts (World App signer if available)
-      const okApprovePrompt = await preSignPrompt("approve", amount);
-      if (!okApprovePrompt) throw new Error("User cancelled approve confirmation");
-
-      // We use commandsAsync.sendTransaction which handles simulation in the World App
-      // The error "disallowed_operation" usually happens if simulation fails or if the batch is invalid.
-      // To ensure simulation success, we bundle approve + stake together.
+      // We use commandsAsync.sendTransaction to bundle approve + stake together.
+      // This is the cleanest way to ensure simulation success in World App.
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
@@ -270,22 +220,6 @@ export function useStaking() {
 
     setLoading(true);
     try {
-      // Optional: read pending rewards to include in pre-sign message
-      let pending: bigint | undefined = undefined;
-      try {
-        pending = (await publicClient.readContract({
-          address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
-          abi: stakingAbi,
-          functionName: "pendingRewards",
-          args: [data.address as `0x${string}`],
-        })) as bigint;
-      } catch (e) {
-        console.warn("Could not read pending rewards for pre-sign:", e);
-      }
-
-      const okClaimPrompt = await preSignPrompt("claim", undefined, pending);
-      if (!okClaimPrompt) throw new Error("User cancelled claim confirmation");
-
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
