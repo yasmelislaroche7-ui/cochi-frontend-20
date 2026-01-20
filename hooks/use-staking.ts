@@ -150,9 +150,8 @@ export function useStaking() {
       const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
-      // In World App, disallowed_operation is frequently caused by simulation failures.
-      // We will use a simplified batched approach that is known to work in MiniKit.
-      // We also ensure all values are sent as strings.
+      // Show amounts clearly in the prompt by using string arguments
+      const readableAmount = formatUnits(amount, Number(TOKEN_DECIMALS));
       
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
