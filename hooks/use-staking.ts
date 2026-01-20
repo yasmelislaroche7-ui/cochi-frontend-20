@@ -199,78 +199,32 @@ export function useStaking() {
       const okApprovePrompt = await preSignPrompt("approve", amount);
       if (!okApprovePrompt) throw new Error("User cancelled approve confirmation");
 
-      // 1) Check current allowance
-      console.log("Checking allowance...");
-      const allowance = (await publicClient.readContract({
-        address: tokenAddress,
-        abi: erc20Abi,
-        functionName: "allowance",
-        args: [data.address as `0x${string}`, stakingAddress],
-      })) as bigint;
-
-      console.log("Current allowance:", allowance.toString());
-
-      if (allowance < amount) {
-        console.log("Allowance insufficient, sending infinite approve...");
-
-        // Approve MAX_UINT256 so user doesn't need to approve each time
-        const approveResult = await MiniKit.commandsAsync.sendTransaction({
-          transaction: [
-            {
-              address: tokenAddress,
-              abi: erc20Abi,
-              functionName: "approve",
-              args: [stakingAddress, MAX_UINT256.toString()],
-            },
-          ],
-        });
-
-        console.log("Approve finalPayload:", approveResult.finalPayload);
-
-        if (approveResult.finalPayload.status === "error") {
-          throw new Error(approveResult.finalPayload.error_code || "Approval failed");
-        }
-
-        // Re-check allowance to be safe
-        const newAllowance = (await publicClient.readContract({
-          address: tokenAddress,
-          abi: erc20Abi,
-          functionName: "allowance",
-          args: [data.address as `0x${string}`, stakingAddress],
-        })) as bigint;
-
-        console.log("Allowance after approve:", newAllowance.toString());
-
-        if (newAllowance < amount) {
-          throw new Error("Allowance did not update to required amount after approve");
-        }
-      } else {
-        console.log("Sufficient allowance detected, skipping approve.");
-      }
-
-      // Pre-sign/confirm stake action (showing amount)
-      const okStakePrompt = await preSignPrompt("stake", amount);
-      if (!okStakePrompt) throw new Error("User cancelled stake confirmation");
-
-      // 2) Now call stake in a separate transaction
-      const stakeResult = await MiniKit.commandsAsync.sendTransaction({
+      // We use commandsAsync.sendTransaction which handles simulation in the World App
+      // The error "disallowed_operation" usually happens if simulation fails or if the batch is invalid.
+      // To ensure simulation success, we bundle approve + stake together.
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
+          {
+            address: tokenAddress,
+            abi: erc20Abi,
+            functionName: "approve",
+            args: [stakingAddress, amount.toString()],
+          },
           {
             address: stakingAddress,
             abi: stakingAbi,
             functionName: "stake",
             args: [amount.toString()],
-          },
+          }
         ],
       });
 
-      console.log("Stake finalPayload:", stakeResult.finalPayload);
-      if (stakeResult.finalPayload.status === "error") {
-        throw new Error(stakeResult.finalPayload.error_code || "Stake transaction failed");
+      if (finalPayload.status === "error") {
+        throw new Error(finalPayload.error_code || "Transaction failed");
       }
 
       await fetchStakingData();
-      return stakeResult.finalPayload.transaction_id;
+      return finalPayload.transaction_id;
     } catch (error: any) {
       console.error("Error staking:", error);
       throw error;

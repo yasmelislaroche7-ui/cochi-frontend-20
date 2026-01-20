@@ -4,3 +4,4 @@ export const WORLD_ID_ACTION = process.env.NEXT_PUBLIC_WORLD_ID_ACTION || proces
 export const APP_ID = process.env.NEXT_PUBLIC_APP_ID || ""
 export const TOKEN_SYMBOL = "MTXs"
 export const TOKEN_DECIMALS = 18
+export const WORLD_CHAIN_RPC = "https://worldchain-mainnet.g.alchemy.com/public"
