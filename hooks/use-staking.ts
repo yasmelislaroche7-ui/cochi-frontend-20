@@ -1,27 +1,27 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { createPublicClient, http, formatUnits } from "viem"
+import { createPublicClient, http } from "viem"
 import { worldchain } from "viem/chains"
 import { MiniKit } from "@worldcoin/minikit-js"
+
 import stakingAbi from "@/lib/contracts/staking-abi.json"
 import erc20Abi from "@/lib/contracts/erc20-abi.json"
+
 import {
   STAKING_CONTRACT_ADDRESS,
   TOKEN_CONTRACT_ADDRESS,
-  TOKEN_SYMBOL,
-  TOKEN_DECIMALS,
 } from "@/lib/contracts/config"
 
 export interface StakingData {
-  stakedBalance: bigint;
-  availableBalance: bigint;
-  pendingRewards: bigint;
-  unlockTime: bigint;
-  apr: bigint;
-  isUnlocked: boolean;
-  isConnected: boolean;
-  address: string | null;
+  stakedBalance: bigint
+  availableBalance: bigint
+  pendingRewards: bigint
+  unlockTime: bigint
+  apr: bigint
+  isUnlocked: boolean
+  isConnected: boolean
+  address: string | null
 }
 
 export function useStaking() {
@@ -34,251 +34,237 @@ export function useStaking() {
     isUnlocked: true,
     isConnected: false,
     address: null,
-  });
-  const [loading, setLoading] = useState(false);
+  })
+
+  const [loading, setLoading] = useState(false)
 
   const publicClient = createPublicClient({
     chain: worldchain,
     transport: http("https://worldchain-mainnet.g.alchemy.com/public"),
-    batch: {
-      multicall: true,
-    },
-  });
+  })
+
+  /* =======================
+     WALLET CONNECTION
+  ======================= */
 
   const connectWallet = useCallback(async () => {
-    console.log("Attempting to connect wallet...")
-    if (typeof window === "undefined") return null;
-    
-    try {
-      const res = await MiniKit.commandsAsync.walletAuth({
-        nonce: crypto.randomUUID(),
-        requestId: "0",
-        expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        notBefore: new Date(),
-        statement: "Connect to Matrix Stake",
-      });
+    if (typeof window === "undefined") return null
 
-      if (res.finalPayload.status === "error") {
-        throw new Error(res.finalPayload.error_code || "Wallet connection failed")
-      }
-
-      // Safe access to address for latest MiniKit types
-      const payload = res.finalPayload as any;
-      const address = payload.address || (MiniKit as any).walletAddress;
-      console.log("Connected address:", address)
-
-      if (!address) {
-        throw new Error("Connection successful but no address found")
-      }
-
-      setData((prev) => ({
-        ...prev,
-        isConnected: true,
-        address: address,
-      }));
-
-      return address;
-    } catch (error: any) {
-      console.error("Error connecting wallet:", error)
-      // Fallback check
-      if ((MiniKit as any).walletAddress) {
-        setData((prev) => ({
-          ...prev,
-          isConnected: true,
-          address: (MiniKit as any).walletAddress,
-        }));
-        return (MiniKit as any).walletAddress;
-      }
-      throw error;
+    // ya conectado
+    if ((MiniKit as any).walletAddress) {
+      const addr = (MiniKit as any).walletAddress
+      setData((p) => ({ ...p, isConnected: true, address: addr }))
+      return addr
     }
-  }, []);
 
-  // Helper: MAX_UINT256
-  const MAX_UINT256 = (1n << 256n) - 1n;
+    const res = await MiniKit.commandsAsync.walletAuth({
+      nonce: crypto.randomUUID(),
+      requestId: "matrix-stake",
+      expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      notBefore: new Date(),
+      statement: "Connect to Matrix Stake",
+    })
 
-  // Fetch user staking data
+    if (res.finalPayload.status === "error") {
+      throw new Error(res.finalPayload.error_code)
+    }
+
+    const address =
+      (res.finalPayload as any).address ||
+      (MiniKit as any).walletAddress
+
+    if (!address) throw new Error("No wallet address")
+
+    setData((p) => ({
+      ...p,
+      isConnected: true,
+      address,
+    }))
+
+    return address
+  }, [])
+
+  /* =======================
+     READ STAKING DATA
+  ======================= */
+
   const fetchStakingData = useCallback(async () => {
-    if (!data.address) return;
+    if (!data.address) return
 
     try {
-      console.log("Fetching staking data for:", data.address);
-      const [userInfo, apr, tokenBalance] = await Promise.all([
+      const [userInfo, apr, balance] = await Promise.all([
         publicClient.readContract({
           address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
           abi: stakingAbi,
           functionName: "getUserInfo",
           args: [data.address as `0x${string}`],
         }) as Promise<[bigint, bigint, bigint, bigint]>,
+
         publicClient.readContract({
           address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
           abi: stakingAbi,
           functionName: "apr",
         }) as Promise<bigint>,
+
         publicClient.readContract({
           address: TOKEN_CONTRACT_ADDRESS as `0x${string}`,
           abi: erc20Abi,
           functionName: "balanceOf",
           args: [data.address as `0x${string}`],
         }) as Promise<bigint>,
-      ]);
+      ])
 
-      const [staked, pending, unlockTime] = userInfo || [0n, 0n, 0n];
-      const currentTime = BigInt(Math.floor(Date.now() / 1000));
-      const isUnlocked = currentTime >= (unlockTime || 0n);
+      const [staked, pending, , unlockTime] = userInfo
+      const now = BigInt(Math.floor(Date.now() / 1000))
 
-      setData((prev) => ({
-        ...prev,
-        stakedBalance: staked || 0n,
-        pendingRewards: pending || 0n,
-        unlockTime: unlockTime || 0n,
-        availableBalance: tokenBalance || 0n,
-        apr: (apr && apr > 0n) ? apr : 500n,
-        isUnlocked,
-      }));
-    } catch (error: any) {
-      console.error("Error fetching staking data:", error);
+      setData((p) => ({
+        ...p,
+        stakedBalance: staked,
+        pendingRewards: pending,
+        unlockTime,
+        availableBalance: balance,
+        apr,
+        isUnlocked: now >= unlockTime,
+      }))
+    } catch (e) {
+      console.error("fetchStakingData error", e)
     }
-  }, [data.address, publicClient]);
+  }, [data.address, publicClient])
+
+  /* =======================
+     APPROVE (STEP 1)
+  ======================= */
+
+  const approve = async (amount: bigint) => {
+    const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+      transaction: [
+        {
+          address: TOKEN_CONTRACT_ADDRESS as `0x${string}`,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [STAKING_CONTRACT_ADDRESS, amount.toString()],
+        },
+      ],
+    })
+
+    if (finalPayload.status === "error") {
+      throw new Error(finalPayload.error_code)
+    }
+  }
+
+  /* =======================
+     STAKE (STEP 2)
+  ======================= */
 
   const stake = async (amount: bigint) => {
-    if (!data.address) throw new Error("Wallet not connected");
+    if (!data.address) throw new Error("Wallet not connected")
 
-    setLoading(true);
+    setLoading(true)
     try {
-      console.log("Preparing stake sequence for amount:", amount.toString());
+      // 1️⃣ approve
+      await approve(amount)
 
-      const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
-      const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
-
-      // Since 'claim' works, we mirror its structure by sending the transaction directly.
-      // We combine approve and stake into one single call to MiniKit.
+      // 2️⃣ stake
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
-            address: tokenAddress,
-            abi: erc20Abi,
-            functionName: "approve",
-            args: [stakingAddress, amount.toString()],
-          },
-          {
-            address: stakingAddress,
+            address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
             abi: stakingAbi,
             functionName: "stake",
             args: [amount.toString()],
-          }
+          },
         ],
-      });
+      })
 
       if (finalPayload.status === "error") {
-        console.error("Transaction error payload:", finalPayload);
-        throw new Error(finalPayload.error_code || "Transaction failed");
+        throw new Error(finalPayload.error_code)
       }
 
-      await fetchStakingData();
-      return finalPayload.transaction_id;
-    } catch (error: any) {
-      console.error("Error in staking flow:", error);
-      throw error;
+      await fetchStakingData()
+      return finalPayload.transaction_id
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
+
+  /* =======================
+     UNSTAKE
+  ======================= */
 
   const unstake = async (amount: bigint) => {
-    if (!data.address) throw new Error("Wallet not connected");
+    if (!data.address) throw new Error("Wallet not connected")
 
-    setLoading(true);
+    setLoading(true)
     try {
-      const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
-
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
-            address: stakingAddress,
+            address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
             abi: stakingAbi,
             functionName: "unstake",
             args: [amount.toString()],
           },
         ],
-      });
+      })
 
       if (finalPayload.status === "error") {
-        throw new Error(finalPayload.error_code || "Transaction failed");
+        throw new Error(finalPayload.error_code)
       }
 
-      await fetchStakingData();
-      return finalPayload.transaction_id;
-    } catch (error: any) {
-      console.error("Error unstaking:", error);
-      throw error;
+      await fetchStakingData()
+      return finalPayload.transaction_id
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
+
+  /* =======================
+     CLAIM
+  ======================= */
 
   const claim = async () => {
-    if (!data.address) throw new Error("Wallet not connected");
+    if (!data.address) throw new Error("Wallet not connected")
 
-    setLoading(true);
+    setLoading(true)
     try {
-      const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
-
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
-            address: stakingAddress,
+            address: STAKING_CONTRACT_ADDRESS as `0x${string}`,
             abi: stakingAbi,
             functionName: "claim",
             args: [],
           },
         ],
-      });
+      })
 
       if (finalPayload.status === "error") {
-        throw new Error(finalPayload.error_code || "Transaction failed");
+        throw new Error(finalPayload.error_code)
       }
 
-      await fetchStakingData();
-      return finalPayload.transaction_id;
-    } catch (error: any) {
-      console.error("Error claiming rewards:", error);
-      throw error;
+      await fetchStakingData()
+      return finalPayload.transaction_id
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  // Auto-refresh data every 10 seconds
-  useEffect(() => {
-    if (data.isConnected) {
-      fetchStakingData();
-      const interval = setInterval(fetchStakingData, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [data.isConnected, fetchStakingData]);
+  /* =======================
+     EFFECTS
+  ======================= */
 
   useEffect(() => {
-    const checkWallet = async () => {
-      if (MiniKit.isInstalled() && !data.isConnected) {
-        try {
-          // If walletAddress is already there, use it immediately
-          if ((MiniKit as any).walletAddress) {
-            setData((prev) => ({
-              ...prev,
-              isConnected: true,
-              address: (MiniKit as any).walletAddress,
-            }));
-            return;
-          }
-          // Otherwise try auth
-          await connectWallet();
-        } catch (e) {
-          console.error("Initial connection failed", e);
-        }
-      }
-    };
-    checkWallet();
-  }, [connectWallet, data.isConnected]);
+    if (MiniKit.isInstalled() && !data.isConnected) {
+      connectWallet().catch(console.error)
+    }
+  }, [connectWallet, data.isConnected])
+
+  useEffect(() => {
+    if (!data.isConnected) return
+    fetchStakingData()
+    const i = setInterval(fetchStakingData, 10_000)
+    return () => clearInterval(i)
+  }, [data.isConnected, fetchStakingData])
 
   return {
     ...data,
@@ -288,5 +274,5 @@ export function useStaking() {
     unstake,
     claim,
     refreshData: fetchStakingData,
-  };
+  }
 }
