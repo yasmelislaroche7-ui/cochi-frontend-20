@@ -170,17 +170,32 @@ export default function MatrixStake() {
   const estimatedDailyRewards = (stakedBalanceFormatted * apyNumber) / 100 / 365
 
   const handleStake = async (amount: number) => {
-    const amountWei = parseUnits(amount.toString(), 18)
-    await stake(amountWei)
+    try {
+      const amountWei = parseUnits(amount.toString(), 18)
+      await stake(amountWei)
+    } catch (error: any) {
+      console.error("Stake failed:", error)
+      throw error
+    }
   }
 
   const handleUnstake = async (amount: number) => {
-    const amountWei = parseUnits(amount.toString(), 18)
-    await unstake(amountWei)
+    try {
+      const amountWei = parseUnits(amount.toString(), 18)
+      await unstake(amountWei)
+    } catch (error: any) {
+      console.error("Unstake failed:", error)
+      throw error
+    }
   }
 
   const handleClaim = async () => {
-    await claim()
+    try {
+      await claim()
+    } catch (error: any) {
+      console.error("Claim failed:", error)
+      throw error
+    }
   }
 
   return (
