@@ -15,130 +15,6 @@ import { useStaking } from "@/hooks/use-staking"
 import { formatUnits, parseUnits } from "viem"
 
 export default function MatrixStake() {
-  const [activeTab, setActiveTab] = useState<"stake" | "unstake">("stake")
-  const {
-    stakedBalance,
-    availableBalance,
-    pendingRewards,
-    unlockTime,
-    apr,
-    isUnlocked,
-    isConnected,
-    address,
-    loading,
-    connectWallet,
-    stake,
-    unstake,
-    claim,
-  } = useStaking()
-
-  const [isMounted, setIsMounted] = useState(false)
-
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
-
-  if (!isMounted) return null
-
-function StakeSection({
-    availableBalanceFormatted,
-    handleStake,
-    loading
-  }: {
-    availableBalanceFormatted: number,
-    handleStake: (amount: number) => Promise<void>,
-    loading: boolean
-  }) {
-  return (
-    <Card className="bg-black/60 border-matrix-green/40 backdrop-blur-md shadow-[0_0_20px_rgba(0,255,0,0.1)] overflow-hidden">
-      <div className="p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-matrix-green/80 flex items-center gap-1">
-            <Activity className="w-3 h-3" /> STAKE_TOKENS
-          </span>
-          <Badge variant="outline" className="text-[10px] border-matrix-green/20 text-matrix-green">
-            AVAILABLE: {availableBalanceFormatted.toFixed(2)}
-          </Badge>
-        </div>
-        <StakeForm
-          availableBalance={availableBalanceFormatted}
-          onStake={handleStake}
-          loading={loading}
-        />
-      </div>
-    </Card>
-  )
-}
-
-function UnstakeSection({
-    stakedBalanceFormatted,
-    handleUnstake,
-    loading,
-    isUnlocked
-  }: {
-    stakedBalanceFormatted: number,
-    handleUnstake: (amount: number) => Promise<void>,
-    loading: boolean,
-    isUnlocked: boolean
-  }) {
-  return (
-    <Card className="bg-black/60 border-matrix-cyan/40 backdrop-blur-md shadow-[0_0_20px_rgba(0,255,255,0.05)] overflow-hidden">
-      <div className="p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-matrix-cyan/80 flex items-center gap-1">
-            <Activity className="w-3 h-3" /> UNSTAKE_TOKENS
-          </span>
-          <Badge variant="outline" className="text-[10px] border-matrix-cyan/20 text-matrix-cyan">
-            STAKED: {stakedBalanceFormatted.toFixed(2)}
-          </Badge>
-        </div>
-        <UnstakeForm
-          stakedBalance={stakedBalanceFormatted}
-          onUnstake={handleUnstake}
-          loading={loading}
-          isUnlocked={isUnlocked}
-        />
-      </div>
-    </Card>
-  )
-}
-
-function RewardsSection({
-    pendingRewardsFormatted,
-    handleClaim,
-    loading,
-    isConnected
-  }: {
-    pendingRewardsFormatted: number,
-    handleClaim: () => Promise<void>,
-    loading: boolean,
-    isConnected: boolean
-  }) {
-  return (
-    <Card className="bg-black/40 border-matrix-cyan/30 backdrop-blur-sm">
-      <CardContent className="p-4 flex items-center justify-between">
-        <div className="space-y-1">
-          <p className="text-[10px] text-matrix-cyan/60 uppercase">Claimable_Rewards</p>
-          <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-black text-matrix-cyan drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]">
-              {pendingRewardsFormatted.toFixed(4)}
-            </span>
-            <span className="text-[10px] text-matrix-cyan/40">MTXs</span>
-          </div>
-        </div>
-        <Button
-          onClick={handleClaim}
-          disabled={loading || pendingRewardsFormatted === 0 || !isConnected}
-          className="bg-matrix-cyan/20 text-matrix-cyan border border-matrix-cyan/50 hover:bg-matrix-cyan/30 font-mono text-sm px-8 h-10 shadow-[0_0_15px_rgba(0,255,255,0.1)]"
-        >
-          {loading ? "CLAIMING..." : "CLAIM_NOW"}
-        </Button>
-      </CardContent>
-    </Card>
-  )
-}
-
-export default function MatrixStake() {
   const {
     stakedBalance,
     availableBalance,
@@ -188,7 +64,7 @@ export default function MatrixStake() {
     }
   }
 
-  const handleClaim = async () => {
+  const handleClaim = async (amount: number) => {
     try {
       await claim()
     } catch (error: any) {
@@ -280,5 +156,103 @@ export default function MatrixStake() {
         </footer>
       </div>
     </main>
+  )
+}
+
+function StakeSection({
+    availableBalanceFormatted,
+    handleStake,
+    loading
+  }: {
+    availableBalanceFormatted: number,
+    handleStake: (amount: number) => Promise<void>,
+    loading: boolean
+  }) {
+  return (
+    <Card className="bg-black/60 border-matrix-green/40 backdrop-blur-md shadow-[0_0_20px_rgba(0,255,0,0.1)] overflow-hidden">
+      <div className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-matrix-green/80 flex items-center gap-1">
+            <Activity className="w-3 h-3" /> STAKE_TOKENS
+          </span>
+          <Badge variant="outline" className="text-[10px] border-matrix-green/20 text-matrix-green">
+            AVAILABLE: {availableBalanceFormatted.toFixed(2)}
+          </Badge>
+        </div>
+        <StakeForm
+          availableBalance={availableBalanceFormatted}
+          onStake={handleStake}
+          loading={loading}
+        />
+      </div>
+    </Card>
+  )
+}
+
+function UnstakeSection({
+    stakedBalanceFormatted,
+    handleUnstake,
+    loading,
+    isUnlocked
+  }: {
+    stakedBalanceFormatted: number,
+    handleUnstake: (amount: number) => Promise<void>,
+    loading: boolean,
+    isUnlocked: boolean
+  }) {
+  return (
+    <Card className="bg-black/60 border-matrix-cyan/40 backdrop-blur-md shadow-[0_0_20px_rgba(0,255,255,0.05)] overflow-hidden">
+      <div className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-matrix-cyan/80 flex items-center gap-1">
+            <Activity className="w-3 h-3" /> UNSTAKE_TOKENS
+          </span>
+          <Badge variant="outline" className="text-[10px] border-matrix-cyan/20 text-matrix-cyan">
+            STAKED: {stakedBalanceFormatted.toFixed(2)}
+          </Badge>
+        </div>
+        <UnstakeForm
+          stakedBalance={stakedBalanceFormatted}
+          onUnstake={handleUnstake}
+          loading={loading}
+          isUnlocked={isUnlocked}
+        />
+      </div>
+    </Card>
+  )
+}
+
+function RewardsSection({
+    pendingRewardsFormatted,
+    handleClaim,
+    loading,
+    isConnected
+  }: {
+    pendingRewardsFormatted: number,
+    handleClaim: (amount: number) => Promise<void>,
+    loading: boolean,
+    isConnected: boolean
+  }) {
+  return (
+    <Card className="bg-black/40 border-matrix-cyan/30 backdrop-blur-sm">
+      <CardContent className="p-4 flex items-center justify-between">
+        <div className="space-y-1">
+          <p className="text-[10px] text-matrix-cyan/60 uppercase">Claimable_Rewards</p>
+          <div className="flex items-baseline gap-1">
+            <span className="text-2xl font-black text-matrix-cyan drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]">
+              {pendingRewardsFormatted.toFixed(4)}
+            </span>
+            <span className="text-[10px] text-matrix-cyan/40">MTXs</span>
+          </div>
+        </div>
+        <Button
+          onClick={() => handleClaim(0)}
+          disabled={loading || pendingRewardsFormatted === 0 || !isConnected}
+          className="bg-matrix-cyan/20 text-matrix-cyan border border-matrix-cyan/50 hover:bg-matrix-cyan/30 font-mono text-sm px-8 h-10 shadow-[0_0_15px_rgba(0,255,255,0.1)]"
+        >
+          {loading ? "CLAIMING..." : "CLAIM_NOW"}
+        </Button>
+      </CardContent>
+    </Card>
   )
 }
