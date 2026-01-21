@@ -12,6 +12,7 @@ import {
   TOKEN_DECIMALS,
   TOKEN_SYMBOL,
 } from "@/lib/contracts/config"
+import { createStakeTransaction, createUnstakeTransaction, createClaimTransaction } from "@/lib/contracts/staking-logic"
 
 export interface StakingData {
   stakedBalance: bigint;
@@ -130,7 +131,6 @@ export function useStaking() {
       const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
-      console.log("Checking allowance for:", data.address);
       const allowance = await publicClient.readContract({
         address: tokenAddress,
         abi: erc20Abi,
@@ -138,46 +138,21 @@ export function useStaking() {
         args: [data.address as `0x${string}`, stakingAddress],
       }) as bigint;
 
-      console.log("Current allowance:", allowance.toString(), "Requested amount:", amount.toString());
+      const transactions = createStakeTransaction(tokenAddress, stakingAddress, amount.toString(), allowance);
 
-      const transactions: any[] = [];
-
-      if (allowance < amount) {
-        console.log("Insufficient allowance, adding approve transaction");
-        transactions.push({
-          address: tokenAddress,
-          abi: erc20Abi,
-          functionName: "approve",
-          args: [stakingAddress, amount.toString()],
-        });
-      }
-
-      transactions.push({
-        address: stakingAddress,
-        abi: stakingAbi,
-        functionName: "stake",
-        args: [amount.toString()],
-      });
-
-      console.log("Sending transactions:", transactions);
+      console.log("Sending stake transactions:", transactions);
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: transactions,
       });
 
-      console.log("MiniKit transaction result:", finalPayload);
-
       if (finalPayload.status === "error") {
-        const errorMsg = finalPayload.error_code || "Transaction failed";
-        console.error("Transaction Error Detail:", finalPayload);
-        throw new Error(errorMsg);
+        throw new Error(finalPayload.error_code || "Transaction failed");
       }
 
-      // Refresh data after a small delay to allow node synchronization
       setTimeout(() => {
         if (data.address) fetchStakingData(data.address);
       }, 3000);
 
-      await fetchStakingData(data.address);
       return finalPayload.transaction_id;
     } catch (error: any) {
       console.error("Error staking:", error);
@@ -192,15 +167,10 @@ export function useStaking() {
     setLoading(true);
     try {
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
+      const transactions = createUnstakeTransaction(stakingAddress, amount.toString());
+      
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [
-          {
-            address: stakingAddress,
-            abi: stakingAbi,
-            functionName: "unstake",
-            args: [amount.toString()],
-          },
-        ],
+        transaction: transactions,
       });
       if (finalPayload.status === "error") {
         throw new Error(finalPayload.error_code || "Transaction failed");
@@ -220,15 +190,10 @@ export function useStaking() {
     setLoading(true);
     try {
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
+      const transactions = createClaimTransaction(stakingAddress);
+
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [
-          {
-            address: stakingAddress,
-            abi: stakingAbi,
-            functionName: "claim",
-            args: [],
-          },
-        ],
+        transaction: transactions,
       });
       if (finalPayload.status === "error") {
         throw new Error(finalPayload.error_code || "Transaction failed");
