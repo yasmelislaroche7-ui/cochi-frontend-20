@@ -8,10 +8,9 @@ import { StakeStats } from "@/components/stake-stats"
 import { StakeForm } from "@/components/stake-form"
 import { UnstakeForm } from "@/components/unstake-form"
 import { MatrixRain } from "@/components/matrix-rain"
-import { WorldIdVerify } from "@/components/world-id-verify"
 import { TransactionHistory } from "@/components/transaction-history"
 import { ContractInfo } from "@/components/contract-info"
-import { Wallet, Info, Activity, ShieldCheck } from "lucide-react"
+import { Wallet, Info, Activity } from "lucide-react"
 import { useStaking } from "@/hooks/use-staking"
 import { formatUnits, parseUnits } from "viem"
 
@@ -208,7 +207,7 @@ export default function MatrixStake() {
           <div className="relative group">
             <div className="absolute -inset-1 bg-matrix-green rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
             <div className="relative p-4 bg-black rounded-full border border-matrix-green/50">
-              <ShieldCheck className="w-10 h-10 text-matrix-green" />
+              <Activity className="w-10 h-10 text-matrix-green" />
             </div>
           </div>
           <div className="text-center">
