@@ -13,8 +13,10 @@ import { ContractInfo } from "@/components/contract-info"
 import { Wallet, Info, Activity } from "lucide-react"
 import { useStaking } from "@/hooks/use-staking"
 import { formatUnits, parseUnits } from "viem"
+import { useToast } from "@/hooks/use-toast"
 
 export default function MatrixStake() {
+  const { toast } = useToast()
   const {
     stakedBalance,
     availableBalance,
