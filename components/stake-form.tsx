@@ -42,16 +42,8 @@ export function StakeForm({ availableBalance, onStake, loading }: StakeFormProps
     try {
       await onStake(numAmount)
       setAmount("")
-      toast({
-        title: "ENVIADO",
-        description: `Stake de ${numAmount.toFixed(2)} MTXs realizado con éxito.`,
-      })
     } catch (error: any) {
-      toast({
-        title: "Stake failed",
-        description: error.message || "Transaction failed",
-        variant: "destructive",
-      })
+      // Error handled in parent handleStake
     }
   }
 

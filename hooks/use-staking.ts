@@ -164,12 +164,19 @@ export function useStaking() {
         transaction: transactions,
       });
 
+      console.log("MiniKit transaction result:", finalPayload);
+
       if (finalPayload.status === "error") {
-        console.error("Transaction Error Payload:", finalPayload);
-        throw new Error(finalPayload.error_code || "Transaction failed");
+        const errorMsg = finalPayload.error_code || "Transaction failed";
+        console.error("Transaction Error Detail:", finalPayload);
+        throw new Error(errorMsg);
       }
 
-      await fetchStakingData(data.address);
+      // Refresh data after a small delay to allow node synchronization
+      setTimeout(() => {
+        fetchStakingData(data.address!);
+      }, 2000);
+
       return finalPayload.transaction_id;
     } catch (error: any) {
       console.error("Error staking:", error);

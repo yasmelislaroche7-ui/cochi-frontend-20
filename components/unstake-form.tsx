@@ -45,16 +45,8 @@ export function UnstakeForm({ stakedBalance, onUnstake, loading, isUnlocked }: U
     try {
       await onUnstake(numAmount)
       setAmount("")
-      toast({
-        title: "Unstake initiated",
-        description: `${numAmount.toFixed(2)} MTXs will be available in 1 day`,
-      })
     } catch (error: any) {
-      toast({
-        title: "Unstake failed",
-        description: error.message || "Transaction failed",
-        variant: "destructive",
-      })
+      // Error handled in parent handleUnstake
     }
   }
 

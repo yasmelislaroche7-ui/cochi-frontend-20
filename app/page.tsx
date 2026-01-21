@@ -47,9 +47,19 @@ export default function MatrixStake() {
   const handleStake = async (amount: number) => {
     try {
       const amountWei = parseUnits(amount.toString(), 18)
-      await stake(amountWei)
+      const txId = await stake(amountWei)
+      toast({
+        title: "TRANSACCIÓN_ENVIADA",
+        description: `Stake de ${amount.toFixed(2)} MTXs en proceso. ID: ${txId?.slice(0, 8)}...`,
+        className: "bg-black border-matrix-green text-matrix-green",
+      })
     } catch (error: any) {
       console.error("Stake failed:", error)
+      toast({
+        title: "ERROR_TRANSACCIÓN",
+        description: error.message || "La simulación de la transacción falló.",
+        variant: "destructive",
+      })
       throw error
     }
   }
@@ -57,18 +67,38 @@ export default function MatrixStake() {
   const handleUnstake = async (amount: number) => {
     try {
       const amountWei = parseUnits(amount.toString(), 18)
-      await unstake(amountWei)
+      const txId = await unstake(amountWei)
+      toast({
+        title: "TRANSACCIÓN_ENVIADA",
+        description: `Retiro de ${amount.toFixed(2)} MTXs iniciado. ID: ${txId?.slice(0, 8)}...`,
+        className: "bg-black border-matrix-cyan text-matrix-cyan",
+      })
     } catch (error: any) {
       console.error("Unstake failed:", error)
+      toast({
+        title: "ERROR_TRANSACCIÓN",
+        description: error.message || "No se pudo iniciar el retiro.",
+        variant: "destructive",
+      })
       throw error
     }
   }
 
   const handleClaim = async (amount: number) => {
     try {
-      await claim()
+      const txId = await claim()
+      toast({
+        title: "RECOMPENSAS_RECLAMADAS",
+        description: `Transacción de reclamo enviada. ID: ${txId?.slice(0, 8)}...`,
+        className: "bg-black border-matrix-cyan text-matrix-cyan",
+      })
     } catch (error: any) {
       console.error("Claim failed:", error)
+      toast({
+        title: "ERROR_RECLAMO",
+        description: error.message || "Fallo al reclamar recompensas.",
+        variant: "destructive",
+      })
       throw error
     }
   }
