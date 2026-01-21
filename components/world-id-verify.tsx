@@ -8,6 +8,8 @@ import { MiniKit, VerificationLevel } from "@worldcoin/minikit-js"
 import { useEffect, useRef } from "react"
 import { useStaking } from "@/hooks/use-staking"
 
+import { APP_ID, WORLD_ID_ACTION } from "@/lib/contracts/config"
+
 interface WorldIdVerifyProps {
   onVerified?: (proof: any) => void
   autoVerify?: boolean
@@ -39,9 +41,9 @@ export function WorldIdVerify({ onVerified, autoVerify }: WorldIdVerifyProps) {
         throw new Error("MiniKit not installed or ready. Please try again.")
       }
       
-      // Production verified App ID and Action
-      const action = "stake-verification";
-      const appId = "app_9e44184e40f240dfb5b8976bde22b548";
+      // Using configuration from constants
+      const action = WORLD_ID_ACTION;
+      const appId = APP_ID;
       
       console.log("Starting verification with action:", action, "App ID:", appId);
       

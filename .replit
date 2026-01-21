@@ -41,3 +41,9 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[userenv]
+
+[userenv.shared]
+NEXT_PUBLIC_WLD_APP_ID = "app_f84357b08826b22ace9ea93d03aef932"
+NEXT_PUBLIC_WLD_ACTION_ID = "stake-verification"
