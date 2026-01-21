@@ -174,9 +174,10 @@ export function useStaking() {
 
       // Refresh data after a small delay to allow node synchronization
       setTimeout(() => {
-        fetchStakingData(data.address!);
-      }, 2000);
+        if (data.address) fetchStakingData(data.address);
+      }, 3000);
 
+      await fetchStakingData(data.address);
       return finalPayload.transaction_id;
     } catch (error: any) {
       console.error("Error staking:", error);
