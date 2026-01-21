@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { createPublicClient, http, formatUnits } from "viem"
+import { createPublicClient, http, formatUnits, parseUnits } from "viem"
 import { worldchain } from "viem/chains"
 import { MiniKit } from "@worldcoin/minikit-js"
 import stakingAbi from "@/lib/contracts/staking-abi.json"
@@ -12,7 +12,8 @@ import {
   TOKEN_DECIMALS,
   TOKEN_SYMBOL,
 } from "@/lib/contracts/config"
-import { createStakeTransaction, createUnstakeTransaction, createClaimTransaction } from "@/lib/contracts/staking-logic"
+import { createUnstakeTransaction, createClaimTransaction } from "@/lib/contracts/staking-logic"
+import { maxUint256 } from "viem"  // ← agregado para approve infinito
 
 export interface StakingData {
   stakedBalance: bigint;
@@ -41,9 +42,7 @@ export function useStaking() {
   const publicClient = createPublicClient({
     chain: worldchain,
     transport: http("https://worldchain-mainnet.g.alchemy.com/public"),
-    batch: {
-      multicall: true,
-    },
+    batch: { multicall: true },
   });
 
   const fetchStakingData = useCallback(async (userAddress: string) => {
@@ -87,7 +86,7 @@ export function useStaking() {
     } catch (error: any) {
       console.error("Error fetching staking data:", error);
     }
-  }, []);
+  }, [publicClient]);
 
   const connectWallet = useCallback(async () => {
     if (typeof window === "undefined") return null;
@@ -124,12 +123,17 @@ export function useStaking() {
     }
   }, [fetchStakingData]);
 
-  const stake = async (amount: bigint) => {
+  const stake = async (amountStr: string) => {  // ← recibe string desde UI (ej. "2526.07")
     if (!data.address) throw new Error("Wallet not connected");
     setLoading(true);
     try {
       const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
+
+      // Convertir monto a bigint con decimals correctos
+      const amount = parseUnits(amountStr, TOKEN_DECIMALS);
+
+      if (amount <= 0n) throw new Error("El monto debe ser mayor que 0");
 
       const allowance = await publicClient.readContract({
         address: tokenAddress,
@@ -138,20 +142,38 @@ export function useStaking() {
         args: [data.address as `0x${string}`, stakingAddress],
       }) as bigint;
 
-      const transactions = createStakeTransaction(tokenAddress, stakingAddress, amount.toString(), allowance);
+      const txs: any[] = [];
 
-      console.log("Sending stake transactions:", transactions);
+      // Approve infinito si es necesario (solo una vez por contrato)
+      if (allowance < amount) {
+        txs.push({
+          address: tokenAddress,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [stakingAddress, maxUint256],
+        });
+      }
+
+      txs.push({
+        address: stakingAddress,
+        abi: stakingAbi,
+        functionName: "stake",
+        args: [amount],
+      });
+
+      console.log("Enviando batch para stake:", txs);
+
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: transactions,
+        transaction: txs,
       });
 
       if (finalPayload.status === "error") {
-        throw new Error(finalPayload.error_code || "Transaction failed");
+        throw new Error(finalPayload.error_code || finalPayload.message || "Transacción fallida");
       }
 
       setTimeout(() => {
         if (data.address) fetchStakingData(data.address);
-      }, 3000);
+      }, 6000);  // más tiempo para confirmación
 
       return finalPayload.transaction_id;
     } catch (error: any) {
@@ -162,20 +184,22 @@ export function useStaking() {
     }
   };
 
-  const unstake = async (amount: bigint) => {
+  const unstake = async (amountStr: string) => {
     if (!data.address) throw new Error("Wallet not connected");
     setLoading(true);
     try {
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
-      const transactions = createUnstakeTransaction(stakingAddress, amount.toString());
-      
+      const amount = parseUnits(amountStr, TOKEN_DECIMALS);
+
+      const txs = createUnstakeTransaction(stakingAddress, amount);  // ajusta abajo
+
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: transactions,
+        transaction: txs,
       });
       if (finalPayload.status === "error") {
         throw new Error(finalPayload.error_code || "Transaction failed");
       }
-      await fetchStakingData(data.address);
+      setTimeout(() => data.address && fetchStakingData(data.address), 6000);
       return finalPayload.transaction_id;
     } catch (error: any) {
       console.error("Error unstaking:", error);
@@ -190,15 +214,15 @@ export function useStaking() {
     setLoading(true);
     try {
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
-      const transactions = createClaimTransaction(stakingAddress);
+      const txs = createClaimTransaction(stakingAddress);
 
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: transactions,
+        transaction: txs,
       });
       if (finalPayload.status === "error") {
         throw new Error(finalPayload.error_code || "Transaction failed");
       }
-      await fetchStakingData(data.address);
+      setTimeout(() => data.address && fetchStakingData(data.address), 6000);
       return finalPayload.transaction_id;
     } catch (error: any) {
       console.error("Error claiming rewards:", error);
