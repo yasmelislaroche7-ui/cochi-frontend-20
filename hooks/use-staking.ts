@@ -130,24 +130,42 @@ export function useStaking() {
       const tokenAddress = TOKEN_CONTRACT_ADDRESS as `0x${string}`;
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`;
 
+      console.log("Checking allowance for:", data.address);
+      const allowance = await publicClient.readContract({
+        address: tokenAddress,
+        abi: erc20Abi,
+        functionName: "allowance",
+        args: [data.address as `0x${string}`, stakingAddress],
+      }) as bigint;
+
+      console.log("Current allowance:", allowance.toString(), "Requested amount:", amount.toString());
+
+      const transactions: any[] = [];
+
+      if (allowance < amount) {
+        console.log("Insufficient allowance, adding approve transaction");
+        transactions.push({
+          address: tokenAddress,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [stakingAddress, amount.toString()],
+        });
+      }
+
+      transactions.push({
+        address: stakingAddress,
+        abi: stakingAbi,
+        functionName: "stake",
+        args: [amount.toString()],
+      });
+
+      console.log("Sending transactions:", transactions);
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [
-          {
-            address: tokenAddress,
-            abi: erc20Abi,
-            functionName: "approve",
-            args: [stakingAddress, amount.toString()],
-          },
-          {
-            address: stakingAddress,
-            abi: stakingAbi,
-            functionName: "stake",
-            args: [amount.toString()],
-          }
-        ],
+        transaction: transactions,
       });
 
       if (finalPayload.status === "error") {
+        console.error("Transaction Error Payload:", finalPayload);
         throw new Error(finalPayload.error_code || "Transaction failed");
       }
 
