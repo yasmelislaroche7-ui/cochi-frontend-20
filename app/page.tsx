@@ -48,8 +48,7 @@ export default function MatrixStake() {
 
   const handleStake = async (amount: number) => {
     try {
-      const amountWei = parseUnits(amount.toString(), 18)
-      const txId = await stake(amountWei)
+      const txId = await stake(amount.toString())
       toast({
         title: "TRANSACCIÓN_ENVIADA",
         description: `Stake de ${amount.toFixed(2)} MTXs en proceso. ID: ${txId?.slice(0, 8)}...`,
@@ -68,8 +67,7 @@ export default function MatrixStake() {
 
   const handleUnstake = async (amount: number) => {
     try {
-      const amountWei = parseUnits(amount.toString(), 18)
-      const txId = await unstake(amountWei)
+      const txId = await unstake(amount.toString())
       toast({
         title: "TRANSACCIÓN_ENVIADA",
         description: `Retiro de ${amount.toFixed(2)} MTXs iniciado. ID: ${txId?.slice(0, 8)}...`,
