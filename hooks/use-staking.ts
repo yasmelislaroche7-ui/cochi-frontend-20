@@ -13,6 +13,8 @@ import {
   TOKEN_SYMBOL,
 } from "@/lib/contracts/config"
 
+import { createStakeTransaction, createUnstakeTransaction, createClaimTransaction } from "@/lib/contracts/staking-logic"
+
 export interface StakingData {
   stakedBalance: bigint
   availableBalance: bigint
@@ -140,23 +142,7 @@ export function useStaking() {
         args: [data.address as `0x${string}`, stakingAddress],
       }) as bigint
 
-      const txs: any[] = []
-
-      if (allowance < amount) {
-        txs.push({
-          address: tokenAddress,
-          abi: erc20Abi,
-          functionName: "approve",
-          args: [stakingAddress, maxUint256],
-        })
-      }
-
-      txs.push({
-        address: stakingAddress,
-        abi: stakingAbi,
-        functionName: "stake",
-        args: [amount],
-      })
+      const txs = createStakeTransaction(tokenAddress, stakingAddress, amount.toString(), allowance);
 
       console.log("Enviando transacciones para stake:", txs)
 
@@ -165,16 +151,23 @@ export function useStaking() {
       })
 
       if (finalPayload.status === "error") {
-        throw new Error(finalPayload.error_code || finalPayload.message || "Transacción fallida")
+        throw new Error(finalPayload.error_code || "Transacción fallida")
       }
 
       console.log("Stake enviado. Transaction ID:", finalPayload.transaction_id)
 
       // Refrescar datos después de un tiempo razonable
-      setTimeout(() => {
-        if (data.address) fetchStakingData(data.address)
+      setTimeout(async () => {
+        if (data.address) {
+          try {
+            await fetchStakingData(data.address)
+          } catch (e) {
+            console.error("Delayed refresh failed", e)
+          }
+        }
       }, 8000)
 
+      await fetchStakingData(data.address)
       return finalPayload.transaction_id
     } catch (error: any) {
       console.error("Error en stake:", error)
@@ -192,14 +185,7 @@ export function useStaking() {
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`
       const amount = parseUnits(amountStr, TOKEN_DECIMALS)
 
-      const txs = [
-        {
-          address: stakingAddress,
-          abi: stakingAbi,
-          functionName: "unstake",
-          args: [amount],
-        },
-      ]
+      const txs = createUnstakeTransaction(stakingAddress, amount.toString());
 
       console.log("Enviando transacciones para unstake:", txs)
 
@@ -212,6 +198,7 @@ export function useStaking() {
       }
 
       setTimeout(() => data.address && fetchStakingData(data.address), 8000)
+      await fetchStakingData(data.address)
       return finalPayload.transaction_id
     } catch (error: any) {
       console.error("Error en unstake:", error)
@@ -228,14 +215,7 @@ export function useStaking() {
     try {
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`
 
-      const txs = [
-        {
-          address: stakingAddress,
-          abi: stakingAbi,
-          functionName: "claim",
-          args: [],
-        },
-      ]
+      const txs = createClaimTransaction(stakingAddress);
 
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: txs,
@@ -246,6 +226,7 @@ export function useStaking() {
       }
 
       setTimeout(() => data.address && fetchStakingData(data.address), 8000)
+      await fetchStakingData(data.address)
       return finalPayload.transaction_id
     } catch (error: any) {
       console.error("Error en claim:", error)
