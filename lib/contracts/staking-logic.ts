@@ -1,6 +1,19 @@
-import { erc20Abi } from "viem";
 import stakingAbi from "./staking-abi.json";
 import { MiniKit } from "@worldcoin/minikit-js";
+
+// Standard ERC20 ABI for allowance/approve as MiniKit doesn't export them directly as a constant
+const erc20MinimalAbi = [
+  {
+    "inputs": [
+      { "internalType": "address", "name": "spender", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "approve",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+];
 
 export const createStakeTransaction = (tokenAddress: string, stakingAddress: string, amount: string, allowance: bigint) => {
   const transactions: any[] = [];
@@ -9,7 +22,7 @@ export const createStakeTransaction = (tokenAddress: string, stakingAddress: str
   if (allowance < amountBigInt) {
     transactions.push({
       address: tokenAddress as `0x${string}`,
-      abi: erc20Abi,
+      abi: erc20MinimalAbi,
       functionName: "approve",
       args: [stakingAddress as `0x${string}`, amount],
     });
