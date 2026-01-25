@@ -180,7 +180,7 @@ export default function MatrixStake() {
 
         <footer className="text-center py-6 border-t border-matrix-green/10">
           <div className="flex flex-col items-center gap-2 text-[10px] text-matrix-green/40 font-mono">
-            <span className="flex items-center gap-1"><Info className="w-3 h-3" /> PROTOCOL_VERSION: 2.0.0-PRO</span>
+            <span className="flex items-center gap-1"><Info className="w-3 h-3" /> PROTOCOL_VERSION: 2.0.0-PRO (2026)</span>
             <span>{"// SECURITY_VERIFIED_ON_CHAIN"}</span>
           </div>
         </footer>

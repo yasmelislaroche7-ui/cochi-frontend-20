@@ -35,27 +35,33 @@ export const createStakeTransaction = (tokenAddress: string, stakingAddress: str
     args: [amount],
   });
 
-  return transactions;
+  return {
+    transaction: transactions
+  };
 };
 
 export const createUnstakeTransaction = (stakingAddress: string, amount: string) => {
-  return [
-    {
-      address: stakingAddress as `0x${string}`,
-      abi: stakingAbi,
-      functionName: "unstake",
-      args: [amount],
-    },
-  ];
+  return {
+    transaction: [
+      {
+        address: stakingAddress as `0x${string}`,
+        abi: stakingAbi,
+        functionName: "unstake",
+        args: [amount],
+      },
+    ]
+  };
 };
 
 export const createClaimTransaction = (stakingAddress: string) => {
-  return [
-    {
-      address: stakingAddress as `0x${string}`,
-      abi: stakingAbi,
-      functionName: "claim",
-      args: [],
-    },
-  ];
+  return {
+    transaction: [
+      {
+        address: stakingAddress as `0x${string}`,
+        abi: stakingAbi,
+        functionName: "claim",
+        args: [],
+      },
+    ]
+  };
 };

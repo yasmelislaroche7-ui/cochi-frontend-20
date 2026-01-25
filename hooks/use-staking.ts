@@ -142,13 +142,11 @@ export function useStaking() {
         args: [data.address as `0x${string}`, stakingAddress],
       }) as bigint
 
-      const txs = createStakeTransaction(tokenAddress, stakingAddress, amount.toString(), allowance);
+      const txPayload = createStakeTransaction(tokenAddress, stakingAddress, amount.toString(), allowance);
 
-      console.log("Enviando transacciones para stake:", txs)
+      console.log("Enviando transacciones para stake:", txPayload)
 
-      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: txs,
-      })
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction(txPayload)
 
       if (finalPayload.status === "error") {
         throw new Error(finalPayload.error_code || "Transacción fallida")
@@ -185,13 +183,11 @@ export function useStaking() {
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`
       const amount = parseUnits(amountStr, TOKEN_DECIMALS)
 
-      const txs = createUnstakeTransaction(stakingAddress, amount.toString());
+      const txPayload = createUnstakeTransaction(stakingAddress, amount.toString());
 
-      console.log("Enviando transacciones para unstake:", txs)
+      console.log("Enviando transacciones para unstake:", txPayload)
 
-      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: txs,
-      })
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction(txPayload)
 
       if (finalPayload.status === "error") {
         throw new Error(finalPayload.error_code || "Transacción fallida")
@@ -215,11 +211,9 @@ export function useStaking() {
     try {
       const stakingAddress = STAKING_CONTRACT_ADDRESS as `0x${string}`
 
-      const txs = createClaimTransaction(stakingAddress);
+      const txPayload = createClaimTransaction(stakingAddress);
 
-      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: txs,
-      })
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction(txPayload)
 
       if (finalPayload.status === "error") {
         throw new Error(finalPayload.error_code || "Transacción fallida")
