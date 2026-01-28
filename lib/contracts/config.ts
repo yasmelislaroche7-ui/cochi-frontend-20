@@ -1,5 +1,5 @@
-import stakingAbi from "./contracts/staking-abi.json"
-import erc20Abi from "./contracts/erc20-abi.json"
+import stakingAbi from "./staking-abi.json"
+import erc20Abi from "./erc20-abi.json"
 
 export const STAKING_CONTRACT_ADDRESS =
   (process.env.NEXT_PUBLIC_STAKING_CONTRACT_ADDRESS ||
