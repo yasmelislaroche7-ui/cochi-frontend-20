@@ -1,6 +1,3 @@
-import stakingAbi from "./staking-abi.json";
-import { MiniKit } from "@worldcoin/minikit-js";
-
 // Standard ERC20 ABI for allowance/approve as MiniKit doesn't export them directly as a constant
 const erc20MinimalAbi = [
   {
@@ -10,6 +7,34 @@ const erc20MinimalAbi = [
     ],
     "name": "approve",
     "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+];
+
+const stakingMinimalAbi = [
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "stake",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "unstake",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "claim",
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   }
@@ -30,7 +55,7 @@ export const createStakeTransaction = (tokenAddress: string, stakingAddress: str
 
   transactions.push({
     address: stakingAddress as `0x${string}`,
-    abi: stakingAbi,
+    abi: stakingMinimalAbi,
     functionName: "stake",
     args: [amount],
   });
@@ -45,7 +70,7 @@ export const createUnstakeTransaction = (stakingAddress: string, amount: string)
     transaction: [
       {
         address: stakingAddress as `0x${string}`,
-        abi: stakingAbi,
+        abi: stakingMinimalAbi,
         functionName: "unstake",
         args: [amount],
       },
@@ -58,7 +83,7 @@ export const createClaimTransaction = (stakingAddress: string) => {
     transaction: [
       {
         address: stakingAddress as `0x${string}`,
-        abi: stakingAbi,
+        abi: stakingMinimalAbi,
         functionName: "claim",
         args: [],
       },
