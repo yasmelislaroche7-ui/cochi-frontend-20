@@ -1,111 +1,141 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { createPublicClient, http, parseUnits } from "viem"
+import { useEffect, useState, useCallback } from "react"
+import { createPublicClient, createWalletClient, http, formatUnits, parseUnits } from "viem"
 import { worldchain } from "viem/chains"
 import { MiniKit } from "@worldcoin/minikit-js"
-
 import stakingAbi from "@/lib/contracts/staking-abi.json"
 import erc20Abi from "@/lib/contracts/erc20-abi.json"
-
 import {
   STAKING_CONTRACT_ADDRESS,
   TOKEN_CONTRACT_ADDRESS,
-  TOKEN_DECIMALS,
-} from "@/lib/contracts/config"
+} from "@/lib/contracts/addresses"
 
 export function useStaking() {
   const [address, setAddress] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  const [stakedBalance, setStakedBalance] = useState<bigint>(0n)
+  const [availableBalance, setAvailableBalance] = useState<bigint>(0n)
+  const [pendingRewards, setPendingRewards] = useState<bigint>(0n)
+  const [apr, setApr] = useState<number>(0)
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(true)
+
+  const isConnected = !!address
+
   const publicClient = createPublicClient({
     chain: worldchain,
-    transport: http("https://worldchain-mainnet.g.alchemy.com/public"),
+    transport: http(),
   })
 
-  // 🔗 CONNECT WALLET
-  const connectWallet = useCallback(async () => {
-    const res = await MiniKit.commandsAsync.walletAuth({
-      nonce: crypto.randomUUID(),
-      requestId: "0",
-      expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      notBefore: new Date(),
-      statement: "Connect to staking app",
-    })
+  const refreshData = useCallback(async () => {
+    if (!address) return
 
-    if (res.finalPayload.status === "error") {
-      throw new Error("Wallet connection failed")
-    }
+    const [
+      staked,
+      rewards,
+      balance,
+      aprValue,
+    ] = await Promise.all([
+      publicClient.readContract({
+        address: STAKING_CONTRACT_ADDRESS,
+        abi: stakingAbi,
+        functionName: "stakedAmount",
+        args: [address],
+      }),
+      publicClient.readContract({
+        address: STAKING_CONTRACT_ADDRESS,
+        abi: stakingAbi,
+        functionName: "pendingRewards",
+        args: [address],
+      }),
+      publicClient.readContract({
+        address: TOKEN_CONTRACT_ADDRESS,
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [address],
+      }),
+      publicClient.readContract({
+        address: STAKING_CONTRACT_ADDRESS,
+        abi: stakingAbi,
+        functionName: "apr",
+      }),
+    ])
 
-    const addr = (res.finalPayload as any).address
-    setAddress(addr)
-    return addr
-  }, [])
-
-  // ✅ APPROVE (BOTÓN SEPARADO)
-  const approve = async (amountStr: string) => {
-    if (!address) throw new Error("Wallet not connected")
-    setLoading(true)
-
-    try {
-      const amount = parseUnits(amountStr, TOKEN_DECIMALS)
-
-      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: {
-          to: TOKEN_CONTRACT_ADDRESS as `0x${string}`,
-          abi: erc20Abi,
-          functionName: "approve",
-          args: [STAKING_CONTRACT_ADDRESS, amount],
-        },
-      })
-
-      if (finalPayload.status === "error") {
-        throw new Error(finalPayload.error_code || "Approve failed")
-      }
-
-      return finalPayload.transaction_id
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // ✅ STAKE (UNA SOLA FUNCIÓN, UNA SOLA TX)
-  const stake = async (amountStr: string) => {
-    if (!address) throw new Error("Wallet not connected")
-    setLoading(true)
-
-    try {
-      const amount = parseUnits(amountStr, TOKEN_DECIMALS)
-
-      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: {
-          to: STAKING_CONTRACT_ADDRESS as `0x${string}`,
-          abi: stakingAbi,
-          functionName: "stake",
-          args: [amount],
-        },
-      })
-
-      if (finalPayload.status === "error") {
-        throw new Error(finalPayload.error_code || "Stake failed")
-      }
-
-      return finalPayload.transaction_id
-    } finally {
-      setLoading(false)
-    }
-  }
+    setStakedBalance(staked as bigint)
+    setPendingRewards(rewards as bigint)
+    setAvailableBalance(balance as bigint)
+    setApr(Number(aprValue))
+  }, [address, publicClient])
 
   useEffect(() => {
-    const existing = (MiniKit as any).walletAddress
-    if (existing) setAddress(existing)
-  }, [])
+    refreshData()
+  }, [refreshData])
+
+  const connectWallet = async () => {
+    const res = await MiniKit.walletAuth()
+    setAddress(res.address)
+  }
+
+  const stake = async (amountStr: string) => {
+    setLoading(true)
+    try {
+      const tx = await MiniKit.sendTransaction({
+        to: STAKING_CONTRACT_ADDRESS,
+        abi: stakingAbi,
+        functionName: "stake",
+        args: [parseUnits(amountStr, 18)],
+      })
+      await refreshData()
+      return tx.transactionId
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const unstake = async (amountStr: string) => {
+    setLoading(true)
+    try {
+      const tx = await MiniKit.sendTransaction({
+        to: STAKING_CONTRACT_ADDRESS,
+        abi: stakingAbi,
+        functionName: "unstake",
+        args: [parseUnits(amountStr, 18)],
+      })
+      await refreshData()
+      return tx.transactionId
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const claim = async () => {
+    setLoading(true)
+    try {
+      const tx = await MiniKit.sendTransaction({
+        to: STAKING_CONTRACT_ADDRESS,
+        abi: stakingAbi,
+        functionName: "claim",
+      })
+      await refreshData()
+      return tx.transactionId
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return {
     address,
     loading,
+    isConnected,
+    isUnlocked,
+    stakedBalance,
+    availableBalance,
+    pendingRewards,
+    apr,
     connectWallet,
-    approve,
     stake,
+    unstake,
+    claim,
   }
 }
