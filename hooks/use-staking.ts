@@ -9,7 +9,7 @@ import erc20Abi from "@/lib/contracts/erc20-abi.json"
 import {
   STAKING_CONTRACT_ADDRESS,
   TOKEN_CONTRACT_ADDRESS,
-} from "@/lib/contracts/addresses"
+} from "@/lib/contracts/config"
 
 export function useStaking() {
   const [address, setAddress] = useState<string | null>(null)
