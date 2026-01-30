@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { useMiniKit } from "@/components/ui/minikit-provider"
+import { useStaking } from "@/hooks/use-staking"
+import { MiniKit } from "@worldcoin/minikit-js"
 import { ethers } from "ethers"
-import { STAKING_ADDRESS } from "@/contracts/addresses"
-import STAKING_ABI from "@/contracts/staking-abi.json"
+import { STAKING_CONTRACT_ADDRESS } from "@/lib/contracts/config"
+import STAKING_ABI from "@/lib/contracts/staking-abi.json"
 
 interface UnstakeFormProps {
   availableToUnstake: number  // Balance staked / disponible para retirar
@@ -25,12 +26,12 @@ export function UnstakeForm({
   const [amount, setAmount] = useState("")
   const [txLoading, setTxLoading] = useState(false)
   const { toast } = useToast()
-  const miniKit = useMiniKit()
+  const { address } = useStaking()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!miniKit?.installed) {
+    if (!MiniKit.isInstalled()) {
       toast({
         title: "Error",
         description: "Abre esta mini app dentro de World App",
@@ -62,28 +63,28 @@ export function UnstakeForm({
 
     try {
       // Convertir a wei (18 decimals)
-      const amountWei = ethers.utils.parseUnits(amount, 18)
-
-      const stakingInterface = new ethers.utils.Interface(STAKING_ABI)
-      const unstakeData = stakingInterface.encodeFunctionData("unstake", [amountWei])
+      const amountWei = ethers.parseUnits(amount, 18)
 
       const unstakeTx = {
-        to: STAKING_ADDRESS,
-        data: unstakeData,
-        value: "0x0",
+        address: STAKING_CONTRACT_ADDRESS,
+        abi: STAKING_ABI,
+        functionName: "unstake",
+        args: [amountWei.toString()],
       }
 
-      const response = await miniKit.sendTransaction([unstakeTx])
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [unstakeTx]
+      })
 
-      if (response.success && response.transactionHash) {
+      if (finalPayload.status === "success") {
         toast({
           title: "¡Unstake realizado!",
-          description: `Tx: ${response.transactionHash.slice(0, 10)}...`,
+          description: `Transacción enviada con éxito`,
         })
         setAmount("")
         onSuccess?.() // Refresca balance staked, history, etc.
       } else {
-        throw new Error(response.error?.message || "Transacción rechazada")
+        throw new Error(finalPayload.error_code || "Transacción rechazada")
       }
     } catch (err: any) {
       console.error("Unstake error:", err)

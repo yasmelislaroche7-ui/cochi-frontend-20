@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { useMiniKit } from "@/components/ui/minikit-provider" // Ajusta ruta si es necesario
-import { ethers } from "ethers" // Solo importamos ethers
-import { STAKING_ADDRESS, TOKEN_ADDRESS } from "@/contracts/addresses" // Tus exports
-// Importa tus ABIs como objetos JSON o strings (de contracts/)
-import ERC20_ABI from "@/contracts/erc20-abi.json"
-import STAKING_ABI from "@/contracts/staking-abi.json"
+import { useStaking } from "@/hooks/use-staking"
+import { MiniKit } from "@worldcoin/minikit-js"
+import { ethers } from "ethers"
+import { STAKING_CONTRACT_ADDRESS, TOKEN_CONTRACT_ADDRESS } from "@/lib/contracts/config"
+import ERC20_ABI from "@/lib/contracts/erc20-abi.json"
+import STAKING_ABI from "@/lib/contracts/staking-abi.json"
 
 interface StakeFormProps {
   availableBalance: number // Balance del token disponible (fuera del staking)
@@ -27,12 +27,12 @@ export function StakeForm({
   const [amount, setAmount] = useState("")
   const [txLoading, setTxLoading] = useState(false)
   const { toast } = useToast()
-  const miniKit = useMiniKit()
+  const { address } = useStaking()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!miniKit?.installed) {
+    if (!MiniKit.isInstalled()) {
       toast({
         title: "Error",
         description: "Abre esta mini app dentro de World App",
@@ -64,43 +64,44 @@ export function StakeForm({
 
     try {
       // Convertir monto a wei (18 decimals como en tu script original)
-      const amountWei = ethers.utils.parseUnits(amount, 18)
+      const amountWei = ethers.parseUnits(amount, 18)
 
-      // 1. Approve calldata con ethers.Interface
-      const tokenInterface = new ethers.utils.Interface(ERC20_ABI)
+      // 1. Approve calldata
+      const tokenInterface = new ethers.Interface(ERC20_ABI)
       const approveData = tokenInterface.encodeFunctionData("approve", [
-        STAKING_ADDRESS,
+        STAKING_CONTRACT_ADDRESS,
         amountWei,
       ])
 
       const approveTx = {
-        to: TOKEN_ADDRESS,
-        data: approveData, // ya es '0x...' string
-        value: "0x0",      // o 0n si prefieres BigInt, pero string funciona
+        address: TOKEN_CONTRACT_ADDRESS,
+        abi: ERC20_ABI,
+        functionName: "approve",
+        args: [STAKING_CONTRACT_ADDRESS, amountWei.toString()],
       }
 
       // 2. Stake calldata
-      const stakingInterface = new ethers.utils.Interface(STAKING_ABI)
-      const stakeData = stakingInterface.encodeFunctionData("stake", [amountWei])
-
       const stakeTx = {
-        to: STAKING_ADDRESS,
-        data: stakeData,
-        value: "0x0",
+        address: STAKING_CONTRACT_ADDRESS,
+        abi: STAKING_ABI,
+        functionName: "stake",
+        args: [amountWei.toString()],
       }
 
       // Enviar batch: approve + stake (MiniKit lo maneja en una firma)
-      const response = await miniKit.sendTransaction([approveTx, stakeTx])
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [approveTx, stakeTx]
+      })
 
-      if (response.success && response.transactionHash) {
+      if (finalPayload.status === "success") {
         toast({
           title: "¡Stake realizado!",
-          description: `Tx: ${response.transactionHash.slice(0, 10)}...`,
+          description: `Tx enviada con éxito`,
         })
         setAmount("")
         onSuccess?.() // Refresh stats, etc.
       } else {
-        throw new Error(response.error?.message || "Transacción rechazada")
+        throw new Error(finalPayload.error_code || "Transacción rechazada")
       }
     } catch (err: any) {
       console.error("Stake error:", err)
