@@ -30,7 +30,10 @@ export default function MatrixStake() {
     isConnected,
     address,
     loading,
-    refreshStats,
+    connectWallet,
+    stake,
+    unstake,
+    claim,
   } = useStaking()
 
   const [isMounted, setIsMounted] = useState(false)
@@ -55,13 +58,13 @@ export default function MatrixStake() {
       const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
         nonce: crypto.randomUUID(),
         requestId: crypto.randomUUID(),
-        expirationTime: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-        notBefore: new Date().toISOString(),
+        expirationTime: new Date(Date.now() + 1000 * 60 * 60 * 24),
+        notBefore: new Date(),
         statement: "Conecta tu wallet para acceder a Matrix Stake",
-      })
+      }) as any
 
       if (finalPayload.status === "success") {
-        refreshStats()
+        connectWallet()
         toast({
           title: "Bienvenido",
           description: "Wallet conectada exitosamente.",
@@ -80,12 +83,12 @@ export default function MatrixStake() {
 
   const handleStake = async (amount: number) => {
     // La lógica se maneja directamente en StakeForm usando MiniKit.commandsAsync.sendTransaction
-    refreshStats()
+    connectWallet()
   }
 
   const handleUnstake = async (amount: number) => {
     // La lógica se maneja directamente en UnstakeForm usando MiniKit.commandsAsync.sendTransaction
-    refreshStats()
+    connectWallet()
   }
 
   const handleClaim = async () => {
@@ -108,7 +111,7 @@ export default function MatrixStake() {
           title: "RECOMPENSAS_RECLAMADAS",
           description: "Tus recompensas han sido enviadas a tu wallet.",
         })
-        refreshStats()
+        connectWallet()
       }
     } catch (error: any) {
       console.error("Claim failed:", error)
@@ -223,7 +226,7 @@ function StakeSection({
         </div>
         <StakeForm
           availableBalance={availableBalanceFormatted}
-          onStake={handleStake}
+          onSuccess={() => handleStake(0)}
           loading={loading}
         />
       </div>
@@ -254,10 +257,9 @@ function UnstakeSection({
           </Badge>
         </div>
         <UnstakeForm
-          stakedBalance={stakedBalanceFormatted}
-          onUnstake={handleUnstake}
+          availableToUnstake={stakedBalanceFormatted}
+          onSuccess={() => handleUnstake(0)}
           loading={loading}
-          isUnlocked={isUnlocked}
         />
       </div>
     </Card>
