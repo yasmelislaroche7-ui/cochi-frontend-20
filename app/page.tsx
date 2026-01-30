@@ -14,6 +14,10 @@ import { Wallet, Info, Activity } from "lucide-react"
 import { useStaking } from "@/hooks/use-staking"
 import { formatUnits, parseUnits } from "viem"
 import { useToast } from "@/hooks/use-toast"
+import { MiniKit } from "@worldcoin/minikit-js"
+
+import { STAKING_CONTRACT_ADDRESS } from "@/lib/contracts/config"
+import STAKING_ABI from "@/lib/contracts/staking-abi.json"
 
 export default function MatrixStake() {
   const { toast } = useToast()
@@ -26,10 +30,7 @@ export default function MatrixStake() {
     isConnected,
     address,
     loading,
-    connectWallet,
-    stake,
-    unstake,
-    claim,
+    refreshStats,
   } = useStaking()
 
   const [isMounted, setIsMounted] = useState(false)
@@ -40,6 +41,37 @@ export default function MatrixStake() {
 
   if (!isMounted) return null
 
+  const handleConnect = async () => {
+    try {
+      if (!MiniKit.isInstalled()) {
+        toast({
+          title: "MiniKit no instalado",
+          description: "Por favor abre esta aplicación dentro de World App.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
+        nonce: crypto.randomUUID(),
+        requestId: crypto.randomUUID(),
+        expirationTime: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
+        notBefore: new Date().toISOString(),
+        statement: "Conecta tu wallet para acceder a Matrix Stake",
+      })
+
+      if (finalPayload.status === "success") {
+        refreshStats()
+        toast({
+          title: "Bienvenido",
+          description: "Wallet conectada exitosamente.",
+        })
+      }
+    } catch (error) {
+      console.error("Wallet connection error:", error)
+    }
+  }
+
   const apyNumber = Number(apr)
   const stakedBalanceFormatted = Number(formatUnits(stakedBalance, 18))
   const availableBalanceFormatted = Number(formatUnits(availableBalance, 18))
@@ -47,59 +79,39 @@ export default function MatrixStake() {
   const estimatedDailyRewards = (stakedBalanceFormatted * apyNumber) / 100 / 365
 
   const handleStake = async (amount: number) => {
-    try {
-      const txId = await stake(amount.toString())
-      toast({
-        title: "TRANSACCIÓN_ENVIADA",
-        description: `Stake de ${amount.toFixed(2)} MTXs en proceso. ID: ${txId?.slice(0, 8)}...`,
-        className: "bg-black border-matrix-green text-matrix-green",
-      })
-    } catch (error: any) {
-      console.error("Stake failed:", error)
-      toast({
-        title: "ERROR_TRANSACCIÓN",
-        description: error.message || "La simulación de la transacción falló.",
-        variant: "destructive",
-      })
-      throw error
-    }
+    // La lógica se maneja directamente en StakeForm usando MiniKit.commandsAsync.sendTransaction
+    refreshStats()
   }
 
   const handleUnstake = async (amount: number) => {
-    try {
-      const txId = await unstake(amount.toString())
-      toast({
-        title: "TRANSACCIÓN_ENVIADA",
-        description: `Retiro de ${amount.toFixed(2)} MTXs iniciado. ID: ${txId?.slice(0, 8)}...`,
-        className: "bg-black border-matrix-cyan text-matrix-cyan",
-      })
-    } catch (error: any) {
-      console.error("Unstake failed:", error)
-      toast({
-        title: "ERROR_TRANSACCIÓN",
-        description: error.message || "No se pudo iniciar el retiro.",
-        variant: "destructive",
-      })
-      throw error
-    }
+    // La lógica se maneja directamente en UnstakeForm usando MiniKit.commandsAsync.sendTransaction
+    refreshStats()
   }
 
-  const handleClaim = async (amount: number) => {
+  const handleClaim = async () => {
     try {
-      const txId = await claim()
-      toast({
-        title: "RECOMPENSAS_RECLAMADAS",
-        description: `Transacción de reclamo enviada. ID: ${txId?.slice(0, 8)}...`,
-        className: "bg-black border-matrix-cyan text-matrix-cyan",
+      if (!MiniKit.isInstalled()) return
+      
+      const claimTx = {
+        address: STAKING_CONTRACT_ADDRESS,
+        abi: STAKING_ABI,
+        functionName: "claimRewards",
+        args: [],
+      }
+
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [claimTx]
       })
+
+      if (finalPayload.status === "success") {
+        toast({
+          title: "RECOMPENSAS_RECLAMADAS",
+          description: "Tus recompensas han sido enviadas a tu wallet.",
+        })
+        refreshStats()
+      }
     } catch (error: any) {
       console.error("Claim failed:", error)
-      toast({
-        title: "ERROR_RECLAMO",
-        description: error.message || "Fallo al reclamar recompensas.",
-        variant: "destructive",
-      })
-      throw error
     }
   }
 
@@ -133,7 +145,7 @@ export default function MatrixStake() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={connectWallet}
+                onClick={handleConnect}
                 className="h-8 px-4 text-[10px] border-matrix-green/50 text-matrix-green hover:bg-matrix-green/20"
               >
                 {"> INITIALIZE_CONNECTION"}
@@ -276,7 +288,7 @@ function RewardsSection({
           </div>
         </div>
         <Button
-          onClick={() => handleClaim(0)}
+          onClick={() => handleClaim()}
           disabled={loading || pendingRewardsFormatted === 0 || !isConnected}
           className="bg-matrix-cyan/20 text-matrix-cyan border border-matrix-cyan/50 hover:bg-matrix-cyan/30 font-mono text-sm px-8 h-10 shadow-[0_0_15px_rgba(0,255,255,0.1)]"
         >

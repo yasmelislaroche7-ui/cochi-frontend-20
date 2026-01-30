@@ -63,45 +63,40 @@ export function StakeForm({
     setTxLoading(true)
 
     try {
-      // Convertir monto a wei (18 decimals como en tu script original)
-      const amountWei = ethers.parseUnits(amount, 18)
+      // Convertir monto a wei (18 decimals)
+      const amountWei = ethers.parseUnits(amount, 18).toString()
 
-      // 1. Approve calldata
-      const tokenInterface = new ethers.Interface(ERC20_ABI)
-      const approveData = tokenInterface.encodeFunctionData("approve", [
-        STAKING_CONTRACT_ADDRESS,
-        amountWei,
-      ])
-
+      // 1. Approve Transaction Object
       const approveTx = {
         address: TOKEN_CONTRACT_ADDRESS,
         abi: ERC20_ABI,
         functionName: "approve",
-        args: [STAKING_CONTRACT_ADDRESS, amountWei.toString()],
+        args: [STAKING_CONTRACT_ADDRESS, amountWei],
       }
 
-      // 2. Stake calldata
+      // 2. Stake Transaction Object
       const stakeTx = {
         address: STAKING_CONTRACT_ADDRESS,
         abi: STAKING_ABI,
         functionName: "stake",
-        args: [amountWei.toString()],
+        args: [amountWei],
       }
 
-      // Enviar batch: approve + stake (MiniKit lo maneja en una firma)
+      // World App 2026 Standard: Batch transaction for smooth UX
+      // This will trigger the floating "Confirm Transaction" message in World App
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [approveTx, stakeTx]
       })
 
       if (finalPayload.status === "success") {
         toast({
-          title: "¡Stake realizado!",
-          description: `Tx enviada con éxito`,
+          title: "¡Transacción Exitosa!",
+          description: "Tu stake se ha procesado correctamente.",
         })
         setAmount("")
-        onSuccess?.() // Refresh stats, etc.
+        onSuccess?.()
       } else {
-        throw new Error(finalPayload.error_code || "Transacción rechazada")
+        throw new Error(finalPayload.error_code || "La transacción fue cancelada")
       }
     } catch (err: any) {
       console.error("Stake error:", err)

@@ -63,28 +63,29 @@ export function UnstakeForm({
 
     try {
       // Convertir a wei (18 decimals)
-      const amountWei = ethers.parseUnits(amount, 18)
+      const amountWei = ethers.parseUnits(amount, 18).toString()
 
       const unstakeTx = {
         address: STAKING_CONTRACT_ADDRESS,
         abi: STAKING_ABI,
         functionName: "unstake",
-        args: [amountWei.toString()],
+        args: [amountWei],
       }
 
+      // World App 2026 Standard for Unstake
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [unstakeTx]
       })
 
       if (finalPayload.status === "success") {
         toast({
-          title: "¡Unstake realizado!",
-          description: `Transacción enviada con éxito`,
+          title: "¡Retiro Exitoso!",
+          description: "Tus tokens han sido retirados correctamente.",
         })
         setAmount("")
-        onSuccess?.() // Refresca balance staked, history, etc.
+        onSuccess?.()
       } else {
-        throw new Error(finalPayload.error_code || "Transacción rechazada")
+        throw new Error(finalPayload.error_code || "La transacción fue cancelada")
       }
     } catch (err: any) {
       console.error("Unstake error:", err)
