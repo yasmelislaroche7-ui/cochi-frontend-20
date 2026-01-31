@@ -66,11 +66,25 @@ export function useStaking() {
     setPendingRewards(rewards as bigint)
     setAvailableBalance(balance as bigint)
     setApr(Number(aprValue))
+    console.log("Data refreshed:", { address, balance: formatUnits(balance as bigint, 18), staked: formatUnits(staked as bigint, 18) })
   }, [address, publicClient])
 
+  // Auto-connect and polling
   useEffect(() => {
-    refreshData()
-  }, [refreshData])
+    if (typeof window !== "undefined" && MiniKit.isInstalled()) {
+      const addr = (MiniKit as any).walletAddress
+      if (addr) setAddress(addr)
+    }
+  }, [])
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (address) {
+      refreshData()
+      interval = setInterval(refreshData, 10000) // Poll every 10s
+    }
+    return () => clearInterval(interval)
+  }, [address, refreshData])
 
   const connectWallet = useCallback(async () => {
     if (typeof window === "undefined") return null
@@ -172,7 +186,7 @@ export function useStaking() {
     }
   }
 
-  const claim = async () => {
+  const claim = async (amount?: number) => {
     if (!address) throw new Error("Wallet not connected")
     setLoading(true)
 

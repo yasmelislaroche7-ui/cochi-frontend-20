@@ -61,7 +61,7 @@ export default function MatrixStake() {
         expirationTime: new Date(Date.now() + 1000 * 60 * 60 * 24),
         notBefore: new Date(),
         statement: "Conecta tu wallet para acceder a Matrix Stake",
-      }) as any
+      } as any) as any
 
       if (finalPayload.status === "success") {
         connectWallet()
@@ -91,7 +91,7 @@ export default function MatrixStake() {
     connectWallet()
   }
 
-  const handleClaim = async () => {
+  const handleClaim = async (amount?: number) => {
     try {
       if (!MiniKit.isInstalled()) return
       
@@ -290,7 +290,7 @@ function RewardsSection({
           </div>
         </div>
         <Button
-          onClick={() => handleClaim()}
+          onClick={() => handleClaim(0)}
           disabled={loading || pendingRewardsFormatted === 0 || !isConnected}
           className="bg-matrix-cyan/20 text-matrix-cyan border border-matrix-cyan/50 hover:bg-matrix-cyan/30 font-mono text-sm px-8 h-10 shadow-[0_0_15px_rgba(0,255,255,0.1)]"
         >

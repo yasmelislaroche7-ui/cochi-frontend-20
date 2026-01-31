@@ -66,7 +66,12 @@ export function StakeForm({
       // Convertir monto a wei (18 decimals)
       const amountWei = ethers.parseUnits(amount, 18).toString()
 
-      // 1. Approve Transaction Object
+      // World App 2026: Trigger approve floating message first
+      toast({
+        title: "Paso 1/2: Aprobación",
+        description: "Por favor, aprueba el uso de tus tokens en World App",
+      })
+
       const approveTx = {
         address: TOKEN_CONTRACT_ADDRESS,
         abi: ERC20_ABI,
@@ -74,7 +79,20 @@ export function StakeForm({
         args: [STAKING_CONTRACT_ADDRESS, amountWei],
       }
 
-      // 2. Stake Transaction Object
+      const approveRes = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [approveTx]
+      })
+
+      if (approveRes.finalPayload.status !== "success") {
+        throw new Error("La aprobación fue cancelada o falló")
+      }
+
+      // Trigger stake floating message second
+      toast({
+        title: "Paso 2/2: Staking",
+        description: "Casi listo, ahora confirma el depósito en World App",
+      })
+
       const stakeTx = {
         address: STAKING_CONTRACT_ADDRESS,
         abi: STAKING_ABI,
@@ -82,21 +100,19 @@ export function StakeForm({
         args: [amountWei],
       }
 
-      // World App 2026 Standard: Batch transaction for smooth UX
-      // This will trigger the floating "Confirm Transaction" message in World App
-      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [approveTx, stakeTx]
+      const stakeRes = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [stakeTx]
       })
 
-      if (finalPayload.status === "success") {
+      if (stakeRes.finalPayload.status === "success") {
         toast({
-          title: "¡Transacción Exitosa!",
-          description: "Tu stake se ha procesado correctamente.",
+          title: "¡ÉXITO TOTAL!",
+          description: "Tus tokens ya están generando recompensas.",
         })
         setAmount("")
         onSuccess?.()
       } else {
-        throw new Error(finalPayload.error_code || "La transacción fue cancelada")
+        throw new Error("El depósito fue cancelado o falló")
       }
     } catch (err: any) {
       console.error("Stake error:", err)
