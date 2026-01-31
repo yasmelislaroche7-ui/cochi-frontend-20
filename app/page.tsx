@@ -83,12 +83,12 @@ export default function MatrixStake() {
 
   const handleStake = async (amount: number) => {
     // La lógica se maneja directamente en StakeForm usando MiniKit.commandsAsync.sendTransaction
-    connectWallet()
+    setTimeout(connectWallet, 5000)
   }
 
   const handleUnstake = async (amount: number) => {
     // La lógica se maneja directamente en UnstakeForm usando MiniKit.commandsAsync.sendTransaction
-    connectWallet()
+    setTimeout(connectWallet, 5000)
   }
 
   const handleClaim = async (amount?: number) => {

@@ -69,7 +69,7 @@ export function StakeForm({
       // World App 2026: Trigger approve floating message first
       toast({
         title: "Paso 1/2: Aprobación",
-        description: "Por favor, aprueba el uso de tus tokens en World App",
+        description: "Autorizando el uso de tokens...",
       })
 
       const approveTx = {
@@ -79,18 +79,18 @@ export function StakeForm({
         args: [STAKING_CONTRACT_ADDRESS, amountWei],
       }
 
-      const approveRes = await MiniKit.commandsAsync.sendTransaction({
+      const { finalPayload: approvePayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [approveTx]
       })
 
-      if (approveRes.finalPayload.status !== "success") {
+      if (approvePayload.status !== "success") {
         throw new Error("La aprobación fue cancelada o falló")
       }
 
       // Trigger stake floating message second
       toast({
-        title: "Paso 2/2: Staking",
-        description: "Casi listo, ahora confirma el depósito en World App",
+        title: "Paso 2/2: Confirmar Stake",
+        description: "Ahora confirma el depósito final",
       })
 
       const stakeTx = {

@@ -31,90 +31,93 @@ export function useStaking() {
   const refreshData = useCallback(async () => {
     if (!address) return
 
-    const [
-      staked,
-      rewards,
-      balance,
-      aprValue,
-    ] = await Promise.all([
-      publicClient.readContract({
-        address: STAKING_CONTRACT_ADDRESS,
-        abi: stakingAbi,
-        functionName: "stakedAmount",
-        args: [address],
-      }),
-      publicClient.readContract({
-        address: STAKING_CONTRACT_ADDRESS,
-        abi: stakingAbi,
-        functionName: "pendingRewards",
-        args: [address],
-      }),
-      publicClient.readContract({
-        address: TOKEN_CONTRACT_ADDRESS,
-        abi: erc20Abi,
-        functionName: "balanceOf",
-        args: [address],
-      }),
-      publicClient.readContract({
-        address: STAKING_CONTRACT_ADDRESS,
-        abi: stakingAbi,
-        functionName: "apr",
-      }),
-    ])
+    try {
+      const [
+        staked,
+        rewards,
+        balance,
+        aprValue,
+      ] = await Promise.all([
+        publicClient.readContract({
+          address: STAKING_CONTRACT_ADDRESS,
+          abi: stakingAbi,
+          functionName: "stakedAmount",
+          args: [address],
+        }).catch(err => { console.error("Error reading stakedAmount:", err); return 0n; }),
+        publicClient.readContract({
+          address: STAKING_CONTRACT_ADDRESS,
+          abi: stakingAbi,
+          functionName: "pendingRewards",
+          args: [address],
+        }).catch(err => { console.error("Error reading pendingRewards:", err); return 0n; }),
+        publicClient.readContract({
+          address: TOKEN_CONTRACT_ADDRESS,
+          abi: erc20Abi,
+          functionName: "balanceOf",
+          args: [address],
+        }).catch(err => { console.error("Error reading balanceOf:", err); return 0n; }),
+        publicClient.readContract({
+          address: STAKING_CONTRACT_ADDRESS,
+          abi: stakingAbi,
+          functionName: "apr",
+        }).catch(err => { console.error("Error reading apr:", err); return 0n; }),
+      ])
 
-    setStakedBalance(staked as bigint)
-    setPendingRewards(rewards as bigint)
-    setAvailableBalance(balance as bigint)
-    setApr(Number(aprValue))
-    console.log("Data refreshed:", { address, balance: formatUnits(balance as bigint, 18), staked: formatUnits(staked as bigint, 18) })
+      setStakedBalance(staked as bigint)
+      setPendingRewards(rewards as bigint)
+      setAvailableBalance(balance as bigint)
+      setApr(Number(aprValue))
+      console.log("SYNC_DATA:", { address, balance: formatUnits(balance as bigint, 18), staked: formatUnits(staked as bigint, 18), apr: aprValue })
+    } catch (error) {
+      console.error("Error in refreshData:", error)
+    }
   }, [address, publicClient])
+
+  // Connection management
+  const connectWallet = useCallback(async () => {
+    if (typeof window === "undefined" || !MiniKit.isInstalled()) return null
+
+    try {
+      const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
+        nonce: crypto.randomUUID(),
+        requestId: "0",
+        expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        notBefore: new Date(),
+        statement: "Connect to Matrix Stake",
+      } as any) as any
+
+      if (finalPayload.status === "error") {
+        throw new Error(finalPayload.error_code || "Wallet connection failed")
+      }
+
+      const addr = finalPayload.address || (MiniKit as any).walletAddress
+      if (!addr) throw new Error("Wallet address not found")
+
+      setAddress(addr)
+      return addr
+    } catch (error) {
+      console.error("Error connecting wallet:", error)
+      throw error
+    }
+  }, [])
 
   // Auto-connect and polling
   useEffect(() => {
     if (typeof window !== "undefined" && MiniKit.isInstalled()) {
       const addr = (MiniKit as any).walletAddress
       if (addr) setAddress(addr)
+      else connectWallet() // Try to trigger auth if not automatically present
     }
-  }, [])
+  }, [connectWallet])
 
   useEffect(() => {
     let interval: NodeJS.Timeout
     if (address) {
       refreshData()
-      interval = setInterval(refreshData, 10000) // Poll every 10s
+      interval = setInterval(refreshData, 10000)
     }
     return () => clearInterval(interval)
   }, [address, refreshData])
-
-  const connectWallet = useCallback(async () => {
-    if (typeof window === "undefined") return null
-
-    try {
-      const res = await MiniKit.commandsAsync.walletAuth({
-        nonce: crypto.randomUUID(),
-        requestId: "0",
-        expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        notBefore: new Date(),
-        statement: "Connect to Matrix Stake",
-      })
-
-      if (res.finalPayload.status === "error") {
-        throw new Error(res.finalPayload.error_code || "Wallet connection failed")
-      }
-
-      const payload = res.finalPayload as any
-      const address = payload.address || (MiniKit as any).walletAddress
-
-      if (!address) throw new Error("Wallet address not found")
-
-      setAddress(address)
-      await refreshData()
-      return address
-    } catch (error) {
-      console.error("Error connecting wallet:", error)
-      throw error
-    }
-  }, [refreshData])
 
   const stake = async (amountStr: string) => {
     if (!address) throw new Error("Wallet not connected")
