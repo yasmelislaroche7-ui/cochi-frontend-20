@@ -10,6 +10,7 @@ import {
   STAKING_CONTRACT_ADDRESS,
   TOKEN_CONTRACT_ADDRESS,
 } from "@/lib/contracts/config"
+import { minikitTransactions } from "@/lib/contracts/minikit-txs"
 
 export function useStaking() {
   const [address, setAddress] = useState<string | null>(null)
@@ -127,18 +128,12 @@ export function useStaking() {
       const amount = parseUnits(amountStr, 18)
       if (amount <= 0n) throw new Error("El monto debe ser mayor que 0")
 
-      const txPayload = {
-        transaction: [
-          {
-            address: STAKING_CONTRACT_ADDRESS,
-            abi: stakingAbi,
-            functionName: "stake",
-            args: [amount.toString()],
-          },
-        ],
-      }
+      const approveTx = minikitTransactions.approve(amount.toString())
+      const stakeTx = minikitTransactions.stake(amount.toString())
 
-      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction(txPayload)
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [approveTx, stakeTx]
+      })
 
       if (finalPayload.status === "error") {
         throw new Error(finalPayload.error_code || "Transacción fallida")
@@ -161,18 +156,11 @@ export function useStaking() {
 
     try {
       const amount = parseUnits(amountStr, 18)
-      const txPayload = {
-        transaction: [
-          {
-            address: STAKING_CONTRACT_ADDRESS,
-            abi: stakingAbi,
-            functionName: "unstake",
-            args: [amount.toString()],
-          },
-        ],
-      }
+      const unstakeTx = minikitTransactions.unstake(amount.toString())
 
-      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction(txPayload)
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [unstakeTx]
+      })
 
       if (finalPayload.status === "error") {
         throw new Error(finalPayload.error_code || "Transacción fallida")
@@ -194,18 +182,11 @@ export function useStaking() {
     setLoading(true)
 
     try {
-      const txPayload = {
-        transaction: [
-          {
-            address: STAKING_CONTRACT_ADDRESS,
-            abi: stakingAbi,
-            functionName: "claim",
-            args: [],
-          },
-        ],
-      }
+      const claimTx = minikitTransactions.claim()
 
-      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction(txPayload)
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [claimTx]
+      })
 
       if (finalPayload.status === "error") {
         throw new Error(finalPayload.error_code || "Transacción fallida")

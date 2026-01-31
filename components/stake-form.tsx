@@ -10,6 +10,7 @@ import { useStaking } from "@/hooks/use-staking"
 import { MiniKit } from "@worldcoin/minikit-js"
 import { ethers } from "ethers"
 import { STAKING_CONTRACT_ADDRESS, TOKEN_CONTRACT_ADDRESS } from "@/lib/contracts/config"
+import { minikitTransactions } from "@/lib/contracts/minikit-txs"
 import ERC20_ABI from "@/lib/contracts/erc20-abi.json"
 import STAKING_ABI from "@/lib/contracts/staking-abi.json"
 
@@ -72,18 +73,12 @@ export function StakeForm({
         description: "Autorizando el uso de tokens...",
       })
 
-      const approveTx = {
-        address: TOKEN_CONTRACT_ADDRESS,
-        abi: ERC20_ABI,
-        functionName: "approve",
-        args: [STAKING_CONTRACT_ADDRESS, amountWei],
-      }
-
-      const { finalPayload: approvePayload } = await MiniKit.commandsAsync.sendTransaction({
+      const approveTx = minikitTransactions.approve(amountWei)
+      const approveRes = await MiniKit.commandsAsync.sendTransaction({
         transaction: [approveTx]
       })
 
-      if (approvePayload.status !== "success") {
+      if (approveRes.finalPayload.status !== "success") {
         throw new Error("La aprobación fue cancelada o falló")
       }
 
@@ -93,13 +88,7 @@ export function StakeForm({
         description: "Ahora confirma el depósito final",
       })
 
-      const stakeTx = {
-        address: STAKING_CONTRACT_ADDRESS,
-        abi: STAKING_ABI,
-        functionName: "stake",
-        args: [amountWei],
-      }
-
+      const stakeTx = minikitTransactions.stake(amountWei)
       const stakeRes = await MiniKit.commandsAsync.sendTransaction({
         transaction: [stakeTx]
       })

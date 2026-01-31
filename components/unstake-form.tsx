@@ -10,6 +10,7 @@ import { useStaking } from "@/hooks/use-staking"
 import { MiniKit } from "@worldcoin/minikit-js"
 import { ethers } from "ethers"
 import { STAKING_CONTRACT_ADDRESS } from "@/lib/contracts/config"
+import { minikitTransactions } from "@/lib/contracts/minikit-txs"
 import STAKING_ABI from "@/lib/contracts/staking-abi.json"
 
 interface UnstakeFormProps {
@@ -65,12 +66,7 @@ export function UnstakeForm({
       // Convertir a wei (18 decimals)
       const amountWei = ethers.parseUnits(amount, 18).toString()
 
-      const unstakeTx = {
-        address: STAKING_CONTRACT_ADDRESS,
-        abi: STAKING_ABI,
-        functionName: "unstake",
-        args: [amountWei],
-      }
+      const unstakeTx = minikitTransactions.unstake(amountWei)
 
       // World App 2026 Standard for Unstake
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
