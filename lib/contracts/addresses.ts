@@ -1,45 +1,24 @@
-// contracts/addresses.ts
-// Archivo centralizado para todas las direcciones de contratos
+// lib/contracts/addresses.ts
+// Direcciones de contratos tomadas desde .env.local
+// SOLO para uso en frontend (NEXT_PUBLIC_)
 
-// Recomendación: Usa .env.local para valores sensibles o variables
-// Pero por simplicidad y compatibilidad con tu setup actual, las ponemos aquí hardcoded
+export const STAKING_ADDRESS =
+  process.env.NEXT_PUBLIC_STAKING_CONTRACT_ADDRESS as `0x${string}`
 
-// Puedes cambiarlas fácilmente o importar desde .env si prefieres
-export const ADDRESSES = {
-  // World Chain Mainnet (o la chain que uses)
-  mainnet: {
-    STAKING: "0xd4292d1c53d6e025156c6ef0dd3d7645eb85dfe3" as `0x${string}`,
-    TOKEN: "0xd2f234926d10549a7232446cc1ff2e3a2fa57581" as `0x${string}`,
-  },
+export const TOKEN_ADDRESS =
+  process.env.NEXT_PUBLIC_TOKEN_CONTRACT_ADDRESS as `0x${string}`
 
-  // World Chain Testnet (agrega si usas testnet)
-  testnet: {
-    STAKING: "0x0000000000000000000000000000000000000000" as `0x${string}`, // Cambia por tu testnet
-    TOKEN: "0x0000000000000000000000000000000000000000" as `0x${string}`,
-  },
+// Opcional: chain id (World Chain Mainnet = 480)
+export const WORLD_CHAIN_ID = Number(
+  process.env.NEXT_PUBLIC_WORLD_CHAIN_ID
+)
 
-  // Puedes agregar más chains en el futuro (ej: Optimism, Sepolia, etc.)
-}
-
-// Exporta las direcciones actuales (elige la chain que uses)
-export const STAKING_ADDRESS = ADDRESSES.mainnet.STAKING
-export const TOKEN_ADDRESS = ADDRESSES.mainnet.TOKEN
-
-// Helper para obtener dirección según chain (opcional, pero útil)
-export function getAddresses(chainId: number | string): {
-  STAKING: `0x${string}`
-  TOKEN: `0x${string}`
-} {
-  // Ejemplo: 480 = World Chain Mainnet (confirma el chain ID real)
-  if (chainId === 480 || chainId === "480") {
-    return ADDRESSES.mainnet
+// Validación simple en dev (opcional pero útil)
+if (process.env.NODE_ENV === "development") {
+  if (!STAKING_ADDRESS) {
+    throw new Error("❌ STAKING_ADDRESS no está definido en .env.local")
   }
-  // Agrega más condiciones según necesites
-  return ADDRESSES.mainnet // fallback
-}
-
-// Tipo para TypeScript estricto (opcional pero recomendado)
-export type ContractAddresses = {
-  STAKING: `0x${string}`
-  TOKEN: `0x${string}`
+  if (!TOKEN_ADDRESS) {
+    throw new Error("❌ TOKEN_ADDRESS no está definido en .env.local")
+  }
 }
